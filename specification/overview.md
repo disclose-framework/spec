@@ -146,6 +146,7 @@ Each time-bounded metric **MUST** be accompanied by a corresponding `_period_day
   "disclose:support_resolution_time_p90_hours": 22.0,
   "disclose:search_to_conversion_rate": 0.047,
   "disclose:average_discount_rate": 0.12,
+  "disclose:average_discount_rate_period_days": 90,
   "disclose:subscription_churn_rate": 0.04,
   "disclose:subscription_churn_rate_period_days": 30,
   "disclose:return_policy_type": "free",
@@ -353,6 +354,14 @@ Each entry in the Verifier Registry includes:
 | `status` | string | One of: `active`, `suspended`, `revoked` |
 | `listed_at` | string | RFC 3339 timestamp of when the Verifier was added to the registry |
 
+### Verifier Benchmarks
+
+Verifiers accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. Verifiers are uniquely positioned to publish this context in the form of vertical benchmarks.
+
+Verifier benchmarks are **out of scope for v0.1** of this specification. However, the field `disclose:benchmark_ref` is reserved in the attribute namespace for future use. When defined in a future extension, this field will allow merchants to reference a Verifier-published benchmark document that provides vertical or category-level distributions for one or more disclosed attributes.
+
+Verifiers **MAY** publish benchmark data in any format prior to a formal extension specification. Agents **MAY** consume such benchmarks at their own discretion. No agent is required to fetch or interpret benchmark data under this version of the specification.
+
 ---
 
 ## Complete Disclosure Document Example
@@ -488,6 +497,7 @@ The following changes **MAY** be introduced without a version increment:
 - Adding new optional attributes to the standard attribute set
 - Adding new optional fields to the attestation object
 - Adding new Verifier entries to the registry
+- Verifiers publishing benchmark documents prior to a formal benchmark extension specification
 
 The following changes **MUST** result in a new `MAJOR` version:
 
@@ -503,6 +513,7 @@ The following changes **MUST** result in a new `MAJOR` version:
 |---|---|
 | **Agent** | A platform, AI assistant, or automated system that queries Disclose data on behalf of a buyer |
 | **Attestation** | A cryptographically signed statement from a Verifier confirming that specific disclosed attributes have been independently verified |
+| **Benchmark Reference** | An optional pointer to a Verifier-published document providing vertical or category-level distributions for disclosed attributes. Reserved for a future extension; see `disclose:benchmark_ref`. |
 | **Disclosure Document** | The JSON document published by a merchant at `/.well-known/disclose` |
 | **Emergent Trust** | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
 | **Merchant** | The entity selling goods or services, who publishes disclosure data under their own domain |
