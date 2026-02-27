@@ -89,7 +89,7 @@ Publish this at `/.well-known/disclose` on your domain. That's a valid Disclose 
 
 | Document | Description |
 |----------|-------------|
-| [Specification]((https://github.com/disclose-framework/spec/blob/main/specification/overview.md) | Full specification: schema, attributes, attestations, verifier registry, governance, security, and versioning |
+| [Specification](https://github.com/disclose-framework/spec/blob/main/specification/overview.md) | Full specification: schema, attributes, attestations, verifier registry, governance, security, and versioning |
 
 This is a v0.1 draft. The specification is open for review and comment.
 
