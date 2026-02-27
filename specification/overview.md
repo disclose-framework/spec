@@ -377,7 +377,7 @@ Each entry in the Verifier Registry includes:
 
 The Verifier Registry is governed by the Disclose Framework governing body. The following process applies to all registry changes:
 
-**Application.** Any organization seeking Verifier status MUST submit an application to the governing body via the process described at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
+**Application.** Any organization seeking Verifier status MUST submit an application to the governing body via [GitHub Issues](https://github.com/disclose-framework/spec/issues) until the formal application process is established at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
 
 **Review.** The governing body will review applications for methodology soundness, data access credibility, and potential conflicts of interest. Review outcomes are published publicly.
 
@@ -387,7 +387,7 @@ The Verifier Registry is governed by the Disclose Framework governing body. The 
 
 **Appeals.** Verifiers subject to suspension or revocation MAY appeal to the governing body within 30 days of the status change. The appeal process and outcomes are published publicly.
 
-**Registry versioning.** The registry is versioned. Agents SHOULD subscribe to registry change notifications published at `https://discloseframework.dev/registry/changelog`.
+**Registry versioning.** The registry is versioned. Agents SHOULD subscribe to registry change notifications published at `https://discloseframework.dev/registry/changelog` *(coming soon)*.
 
 ### Verifier Benchmarks
 
