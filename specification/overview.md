@@ -1,582 +1,324 @@
-# Disclose Framework — Official Specification
-
-## Overview
-
-The Disclose Framework is an open standard for merchant disclosure attestations designed for the emerging era of agentic commerce. As AI agents increasingly act as intermediaries between buyers and merchants — researching products, comparing options, and making or informing purchasing recommendations — they require structured, machine-readable, and verifiable information about merchant practices before they can responsibly recommend where to buy.
-
-Disclose provides that infrastructure layer. It enables AI agents, platforms, and automated systems to access verified, machine-readable information about merchant practices — including return policies, fulfillment performance, review authenticity, and other behavioural signals — when making or informing purchasing decisions on behalf of buyers.
-
-Disclose operates as a disclosure layer that sits above the transaction. Before an agent decides where to buy, Disclose provides the structured signal data needed to make a trustworthy recommendation. It does not process payments, manage checkout sessions, or execute transactions. Its sole function is to standardize how merchants publish verified disclosures and how agents consume them.
-
----
-
-## Overarching Guidelines
-
-The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, and OPTIONAL in this document are to be interpreted as described in RFC 2119 and RFC 8174.
-
-Schema notes:
-
-- **Date format:** Always specified as RFC 3339 unless otherwise specified.
-- **Numeric values:** Expressed as decimals unless otherwise noted (e.g., 0.92 for 92%).
-- **Rates and ratios:** Always expressed as a decimal between 0 and 1 (e.g., 0.06 for 6%).
-- **Time-bounded metrics:** MUST include a `_period_days` companion field declaring the observation window. The default observation window is 90 days unless otherwise specified.
-- **Measurement methodology:** Where a metric's value depends on how it is computed (e.g., whether exchanges are counted as returns, or whether return rate is measured by units or orders), the attesting Verifier's methodology governs. Agents SHOULD consider the Verifier's stated methodology when interpreting attested values, particularly for attributes where platform definitions vary.
-
----
-
-## Design Philosophy
-
-### Trust Is Emergent, Not Engineered
-
-The Disclose Framework does not produce trust scores, badges, tiers, or rankings. It produces structured, verifiable facts about merchant behaviour. Trust emerges from those facts as agents and buyers draw their own conclusions.
-
-This is a deliberate architectural choice with three consequences:
-
-**Merchants disclose behaviour, not claims.** Every attribute in the Disclose schema is grounded in operational outcomes — repeat purchases, return rates, fulfillment accuracy, chargeback rates. These are things that happened, not assertions about quality or intent.
-
-**The framework enforces structure, not interpretation.** Disclose defines what attributes mean, how they are measured, and how they are verified. It does not define how agents should weight them, combine them, or surface them to buyers. That discretion belongs to the platform.
-
-**No centralized authority renders verdicts.** There is no "Disclose Score." There is no tier that grants a badge. A merchant that publishes a low return rate, high on-time shipment rate, and fast refund processing becomes intuitively trustworthy — not because a framework said so, but because the evidence is visible and verifiable.
-
-This philosophy also protects against gaming. Scores and badges create targets. Raw, time-bounded, verifier-attested metrics are far harder to manipulate without changing actual operations.
-
-### Self-Reported Attribute Integrity
-
-Merchants MAY publish disclosures without attestations. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. The framework does not currently define a formal dispute process for false self-reported disclosures; however, platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification will define a community-based flagging and review process.
-
----
-
-## Core Concepts
-
-### The Three-Party Model
-
-Disclose defines three participants:
-
-| Participant | Role |
-|-------------|------|
-| Merchant | Publishes disclosure data about their own practices under their own domain |
-| Verifier | An authorized third party that attests to the accuracy of specific merchant disclosures using cryptographic signatures |
-| Agent | A platform, AI assistant, or automated system that queries and consumes disclosure data on behalf of a buyer |
-
-Unlike transaction protocols, Disclose does not require real-time negotiation between parties. Merchants publish; verifiers attest; agents consume. The flow is asynchronous and cacheable.
-
-### Merchant Sovereignty
-
-A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which verifiers to authorize, and when disclosures are updated or removed. The framework standardizes the format and verification mechanism — not the content or extent of disclosure.
-
-### Selective Disclosure
-
-There is no all-or-nothing requirement. A merchant may publish a single attribute and add additional attributes over time as their business matures or as competitive incentives emerge. This progressive enhancement model lowers the barrier to participation while preserving the integrity of the standard.
-
-### Commerce Risk Coverage
-
-The standard attribute set is designed to address the core risks an agent must evaluate before recommending a purchase:
-
-| Risk Dimension | Covered By |
-|----------------|------------|
-| Product Quality | Repeat purchase rate, product return rate |
-| Delivery Reliability | On-time shipment rate, order accuracy rate |
-| Financial Risk | Refund processing time, chargeback rate |
-| Service Reliability | Customer support resolution time |
-| Demand Authenticity | Search-to-conversion rate |
-| Pricing Integrity | Average discount rate |
-| Long-term Value | Subscription churn rate |
-
-No single dimension dominates. Agents weight these signals according to their own risk models and buyer context.
-
----
-
-## Discovery
-
-### Publication Endpoint
-
-Merchants publish their disclosure document at a well-known URI:
-
-```
-/.well-known/disclose
-```
-
-This endpoint MUST return a valid JSON document conforming to the Disclose schema. The endpoint SHOULD support HTTP caching via standard `Cache-Control` headers.
-
-Example request:
-
-```
-GET /.well-known/disclose HTTP/1.1
-Host: merchant.example.com
-Accept: application/json
-```
-
-### Discovery by Agents
-
-Agents MAY fetch the disclosure document before, during, or after capability negotiation with a merchant's commerce infrastructure. Agents SHOULD cache disclosure documents according to HTTP cache-control directives.
-
-Agents MUST NOT require a disclosure document to be present in order to complete a transaction. The absence of a disclosure document is itself a signal; agents MAY surface this to buyers or use it in ranking logic.
-
----
-
-## Disclosure Document Structure
-
-### Top-Level Fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `disclose_version` | string | Yes | Specification version (e.g., `"0.1"`) |
-| `merchant_domain` | string | Yes | The canonical domain of the merchant (e.g., `"merchant.example.com"`) |
-| `issued_at` | string | Yes | RFC 3339 timestamp of when this document was generated |
-| `expires_at` | string | No | RFC 3339 timestamp after which agents SHOULD re-fetch |
-| `attributes` | object | Yes | Flat key-value map of disclosed merchant attributes |
-| `attestations` | array | No | Array of verifier attestation objects |
-
-### Attribute Namespace
-
-All disclosure attributes exist in the `disclose:` namespace as flat properties. There are no nested categories or composite objects. This design prioritizes agent parsability over human organizational preference, and is consistent with the framework's principle that each metric stand alone.
-
-Each time-bounded metric MUST be accompanied by a corresponding `_period_days` attribute declaring the observation window used to compute it.
-
-Example `attributes` object:
-
-```json
-{
-  "disclose:repeat_purchase_rate": 0.38,
-  "disclose:repeat_purchase_rate_period_days": 90,
-  "disclose:product_return_rate": 0.06,
-  "disclose:product_return_rate_period_days": 90,
-  "disclose:refund_processing_time_median_days": 3.2,
-  "disclose:refund_processing_time_p90_days": 6.1,
-  "disclose:on_time_shipment_rate": 0.97,
-  "disclose:on_time_shipment_rate_period_days": 90,
-  "disclose:order_accuracy_rate": 0.991,
-  "disclose:order_accuracy_rate_period_days": 90,
-  "disclose:chargeback_rate": 0.003,
-  "disclose:chargeback_rate_period_days": 90,
-  "disclose:support_resolution_time_median_hours": 4.2,
-  "disclose:support_resolution_time_p90_hours": 22.0,
-  "disclose:search_to_conversion_rate": 0.047,
-  "disclose:average_discount_rate": 0.12,
-  "disclose:average_discount_rate_period_days": 90,
-  "disclose:subscription_churn_rate": 0.04,
-  "disclose:subscription_churn_rate_period_days": 30,
-  "disclose:return_policy_type": "free",
-  "disclose:return_window_days": 30,
-  "disclose:subscription_cancel_online": true,
-  "disclose:sustainability_certified": true,
-  "disclose:sustainability_certifier": "B Corp"
-}
-```
-
-Agents MUST ignore unknown attributes without error. Merchants MAY include attributes not yet defined in the core specification using their own `disclose:{merchant-domain}:` prefix.
-
----
-
-## Standard Attributes
-
-The following attributes are defined in this version of the specification. All are optional unless noted. Time-bounded metrics default to a 90-day observation window unless the corresponding `_period_days` attribute specifies otherwise.
-
-### Product Quality
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:repeat_purchase_rate` | decimal | Rate of buyers who make a second purchase within the observation window (0–1) |
-| `disclose:repeat_purchase_rate_period_days` | integer | Observation window in days (default: 90) |
-| `disclose:product_return_rate` | decimal | Rate of units returned across all orders (0–1). Measured as returned units divided by shipped units. May be disclosed at SKU or category level. See measurement note below. |
-| `disclose:product_return_rate_period_days` | integer | Observation window in days (default: 90) |
-
-> **Measurement note:** Return rate is measured as returned units divided by total shipped units within the observation window. Exchanges (where the buyer selects a replacement item) are NOT counted as returns in this metric. Returnless refunds where no item is physically returned ARE counted. Where a Verifier attests this attribute, the Verifier's methodology governs and agents SHOULD consult the Verifier's published methodology documentation for definitional details.
-
-### Returns & Refunds
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:return_policy_type` | string | One of: `free`, `label_fee`, `buyer_pays`, `no_returns` |
-| `disclose:return_window_days` | integer | Number of days a buyer has to initiate a return |
-| `disclose:refund_processing_time_median_days` | decimal | Median business days from warehouse receipt of returned item to refund completion. The clock starts when the returned item is received at the merchant's designated return facility, not at return initiation or carrier pickup. |
-| `disclose:refund_processing_time_p90_days` | decimal | 90th percentile business days from warehouse receipt to refund completion (same clock-start as median) |
-| `disclose:exchange_rate` | decimal | Rate of return transactions where the buyer selected a replacement item rather than a refund (0–1). A higher exchange rate signals product confidence and buyer intent to remain a customer. |
-| `disclose:exchange_rate_period_days` | integer | Observation window in days (default: 90) |
-
-### Fulfillment — Shipment Reliability
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:on_time_shipment_rate` | decimal | Rate of orders shipped within the merchant's stated fulfillment window (0–1) |
-| `disclose:on_time_shipment_rate_period_days` | integer | Observation window in days (default: 90) |
-| `disclose:shipment_delay_median_hours` | decimal | Median hours by which late shipments missed the promised window |
-| `disclose:shipment_delay_p90_hours` | decimal | 90th percentile hours by which late shipments missed the promised window |
-
-### Fulfillment — Order Accuracy
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:order_accuracy_rate` | decimal | Rate of orders fulfilled without incorrect or damaged items (0–1) |
-| `disclose:order_accuracy_rate_period_days` | integer | Observation window in days (default: 90) |
-| `disclose:incorrect_item_rate` | decimal | Rate of orders containing a wrong item (0–1) |
-| `disclose:damaged_item_rate` | decimal | Rate of orders containing a damaged item at delivery (0–1) |
-
-### Financial Risk
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:chargeback_rate` | decimal | Chargebacks as a proportion of total transactions (0–1) |
-| `disclose:chargeback_rate_period_days` | integer | Observation window in days (default: 90) |
-
-### Customer Support
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:support_resolution_time_median_hours` | decimal | Median hours from support contact to resolution |
-| `disclose:support_resolution_time_p90_hours` | decimal | 90th percentile hours from support contact to resolution |
-
-### Demand Authenticity
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:search_to_conversion_rate` | decimal | Rate of product page visits that result in a completed purchase (0–1) |
-
-### Pricing Integrity
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:average_discount_rate` | decimal | Average discount applied across completed transactions as a proportion of list price (0–1) |
-| `disclose:average_discount_rate_period_days` | integer | Observation window in days (default: 90) |
-
-### Subscriptions
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:subscription_churn_rate` | decimal | Rate of active subscriptions cancelled within the observation window (0–1) |
-| `disclose:subscription_churn_rate_period_days` | integer | Observation window in days (default: 30) |
-| `disclose:subscription_cancel_online` | boolean | Whether subscriptions can be cancelled without contacting support |
-| `disclose:subscription_pause_available` | boolean | Whether subscriptions can be paused |
-| `disclose:subscription_trial_days` | integer | Free trial duration in days, if offered |
-
-### Sustainability & Ethics
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:sustainability_certified` | boolean | Whether merchant holds a recognized sustainability certification |
-| `disclose:sustainability_certifier` | string | Name of certifying body, if applicable |
-| `disclose:ethical_sourcing_certified` | boolean | Whether merchant holds a recognized ethical sourcing certification |
-
-### Subjective & Qualitative Signals
-
-The attributes in this section differ in kind from the operational metrics above. They are human-assessed rather than operationally derived — aggregated judgments rather than recorded outcomes. They are included in the Disclose schema because they carry recognized signal value and agents are likely to encounter them. However, they are more susceptible to manipulation than behavioral metrics, and their meaning is platform- and context-dependent in ways that operational data is not.
-
-Agents SHOULD weight these attributes with appropriate caution and SHOULD consider them in combination with operational signals rather than in isolation. A high review rating accompanied by a low `disclose:review_verified_purchase_rate` carries materially less evidential weight than the rating alone would suggest.
-
-Review recency is a critical dimension of review signal quality. A merchant with 10,000 lifetime reviews but minimal recent review activity has a materially different trust profile than a merchant with comparable volume but active recent engagement. Agents SHOULD weight `disclose:review_recency_90d_rate` and `disclose:review_recency_365d_rate` when interpreting `disclose:review_rating`, and SHOULD surface review recency context to buyers where relevant.
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `disclose:review_rating` | decimal | Aggregate review score on a 0–5 scale |
-| `disclose:review_count` | integer | Total number of reviews included in the aggregate rating |
-| `disclose:review_verified_purchase_rate` | decimal | Proportion of reviews attributed to verified purchases (0–1). The most manipulation-resistant of the review signals. |
-| `disclose:review_recency_90d_rate` | decimal | Proportion of total reviews submitted within the last 90 days (0–1). Signals active and ongoing customer engagement. |
-| `disclose:review_recency_365d_rate` | decimal | Proportion of total reviews submitted within the last 365 days (0–1). Provides a longer-horizon view of review activity relative to lifetime review volume. |
-
----
-
-## Attestations
-
-### Purpose
-
-An attestation is a cryptographically signed statement from an authorized Verifier confirming that one or more disclosed attributes have been independently verified against source data. Attestations distinguish Disclose from self-reported trust signals that can be easily manipulated.
-
-Merchants MAY publish disclosures without attestations. Unattested attributes are self-reported and agents SHOULD treat them accordingly. Attested attributes carry the reputational weight of the signing Verifier.
-
-### Attestation Object
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `verifier_id` | string | Yes | Unique identifier for the Verifier (e.g., `"loop-returns.com"`) |
-| `verifier_name` | string | Yes | Human-readable name of the Verifier |
-| `attested_attributes` | array of strings | Yes | List of `disclose:` attribute keys this attestation covers |
-| `attested_at` | string | Yes | RFC 3339 timestamp of when the attestation was issued |
-| `expires_at` | string | No | RFC 3339 timestamp after which the attestation should no longer be trusted |
-| `signature` | string | Yes | Base64url-encoded cryptographic signature over the attestation payload |
-| `signing_key_id` | string | Yes | Key ID (`kid`) corresponding to the Verifier's published signing key |
-
-Example attestation:
-
-```json
-{
-  "verifier_id": "loop-returns.com",
-  "verifier_name": "Loop Returns",
-  "attested_attributes": [
-    "disclose:product_return_rate",
-    "disclose:product_return_rate_period_days",
-    "disclose:return_policy_type",
-    "disclose:return_window_days",
-    "disclose:refund_processing_time_median_days",
-    "disclose:refund_processing_time_p90_days",
-    "disclose:exchange_rate",
-    "disclose:exchange_rate_period_days"
-  ],
-  "attested_at": "2026-02-01T00:00:00Z",
-  "expires_at": "2026-08-01T00:00:00Z",
-  "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-  "signing_key_id": "loop-2026"
-}
-```
-
-### Attestation Payload
-
-The payload signed by the Verifier is a canonical JSON object containing:
-
-```json
-{
-  "merchant_domain": "merchant.example.com",
-  "verifier_id": "loop-returns.com",
-  "attested_attributes": { "..." },
-  "attested_at": "2026-02-01T00:00:00Z",
-  "expires_at": "2026-08-01T00:00:00Z"
-}
-```
-
-The `attested_attributes` object in the payload contains the actual attribute values at the time of attestation, not just the keys. This prevents merchants from changing attribute values after attestation without invalidating the signature.
-
-### Signature Algorithm
-
-Verifiers MUST sign attestation payloads using ES256 (ECDSA with P-256 and SHA-256). Verifiers MUST publish their signing keys as JWK (JSON Web Key) objects at:
-
-```
-/.well-known/disclose-verifier
-```
-
----
-
-## Verifier Registry
-
-### Purpose
-
-The Verifier Registry is the canonical list of authorized Disclose Verifiers. Its existence ensures that an attested disclosure carries meaningful weight — any party claiming to be a Verifier must be publicly listed, with their signing keys published and auditable.
-
-### Registry Discovery
-
-The Verifier Registry is published and maintained by the Disclose Framework governing body at:
-
-```
-https://discloseframework.dev/registry/verifiers.json
-```
-
-Agents SHOULD cache this registry and refresh it periodically. Agents MUST validate that the `verifier_id` in any attestation appears in the current registry before treating the attestation as trusted.
-
-### Verifier Listing
-
-Each entry in the Verifier Registry includes:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `verifier_id` | string | Unique identifier (matches the verifier's domain) |
-| `verifier_name` | string | Human-readable name |
-| `verifiable_attributes` | array of strings | The `disclose:` attributes this Verifier is authorized to attest |
-| `keys_url` | string | URL to the Verifier's `/.well-known/disclose-verifier` endpoint |
-| `status` | string | One of: `active`, `suspended`, `revoked` |
-| `listed_at` | string | RFC 3339 timestamp of when the Verifier was added to the registry |
-
-### Registry Governance
-
-The Verifier Registry is governed by the Disclose Framework governing body. The following process applies to all registry changes:
-
-**Application.** Any organization seeking Verifier status MUST submit an application to the governing body via [GitHub Issues](https://github.com/disclose-framework/spec/issues) until the formal application process is established at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
-
-**Review.** The governing body will review applications for methodology soundness, data access credibility, and potential conflicts of interest. Review outcomes are published publicly.
-
-**Listing.** Approved Verifiers are added to the registry with `status: active`. The governing body assigns the scope of `verifiable_attributes` based on the approved methodology. Verifiers MAY NOT attest attributes outside their approved scope.
-
-**Suspension and Revocation.** The governing body MAY suspend a Verifier (setting `status: suspended`) pending investigation of a methodology concern, or revoke a Verifier (setting `status: revoked`) for material misrepresentation, methodology failure, or other cause. Agents MUST treat attestations from suspended or revoked Verifiers as unverified.
-
-**Appeals.** Verifiers subject to suspension or revocation MAY appeal to the governing body within 30 days of the status change. The appeal process and outcomes are published publicly.
-
-**Registry versioning.** The registry is versioned. Agents SHOULD subscribe to registry change notifications published at `https://discloseframework.dev/registry/changelog` *(coming soon)*.
-
-### Verifier Benchmarks
-
-Verifiers accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. Verifiers are uniquely positioned to publish this context in the form of vertical benchmarks.
-
-Verifier benchmarks are out of scope for v0.1 of this specification. However, the field `disclose:benchmark_ref` is reserved in the attribute namespace for future use. When defined in a future extension, this field will allow merchants to reference a Verifier-published benchmark document that provides vertical or category-level distributions for one or more disclosed attributes.
-
-Verifiers MAY publish benchmark data in any format prior to a formal extension specification. Agents MAY consume such benchmarks at their own discretion. No agent is required to fetch or interpret benchmark data under this version of the specification.
-
----
-
-## Complete Disclosure Document Example
-
-```json
-{
-  "disclose_version": "0.1",
-  "merchant_domain": "merchant.example.com",
-  "issued_at": "2026-02-24T00:00:00Z",
-  "expires_at": "2026-05-24T00:00:00Z",
-  "attributes": {
-    "disclose:repeat_purchase_rate": 0.38,
-    "disclose:repeat_purchase_rate_period_days": 90,
-    "disclose:product_return_rate": 0.06,
-    "disclose:product_return_rate_period_days": 90,
-    "disclose:return_policy_type": "free",
-    "disclose:return_window_days": 30,
-    "disclose:refund_processing_time_median_days": 3.2,
-    "disclose:refund_processing_time_p90_days": 6.1,
-    "disclose:exchange_rate": 0.22,
-    "disclose:exchange_rate_period_days": 90,
-    "disclose:on_time_shipment_rate": 0.97,
-    "disclose:on_time_shipment_rate_period_days": 90,
-    "disclose:shipment_delay_median_hours": 8.0,
-    "disclose:shipment_delay_p90_hours": 36.0,
-    "disclose:order_accuracy_rate": 0.991,
-    "disclose:order_accuracy_rate_period_days": 90,
-    "disclose:incorrect_item_rate": 0.006,
-    "disclose:damaged_item_rate": 0.003,
-    "disclose:chargeback_rate": 0.003,
-    "disclose:chargeback_rate_period_days": 90,
-    "disclose:support_resolution_time_median_hours": 4.2,
-    "disclose:support_resolution_time_p90_hours": 22.0,
-    "disclose:search_to_conversion_rate": 0.047,
-    "disclose:average_discount_rate": 0.12,
-    "disclose:average_discount_rate_period_days": 90,
-    "disclose:subscription_churn_rate": 0.04,
-    "disclose:subscription_churn_rate_period_days": 30,
-    "disclose:subscription_cancel_online": true,
-    "disclose:review_rating": 4.7,
-    "disclose:review_count": 14200,
-    "disclose:review_verified_purchase_rate": 0.91,
-    "disclose:review_recency_90d_rate": 0.08,
-    "disclose:review_recency_365d_rate": 0.31,
-    "disclose:sustainability_certified": true,
-    "disclose:sustainability_certifier": "B Corp"
-  },
-  "attestations": [
-    {
-      "verifier_id": "loop-returns.com",
-      "verifier_name": "Loop Returns",
-      "attested_attributes": [
-        "disclose:product_return_rate",
-        "disclose:product_return_rate_period_days",
-        "disclose:return_policy_type",
-        "disclose:return_window_days",
-        "disclose:refund_processing_time_median_days",
-        "disclose:refund_processing_time_p90_days",
-        "disclose:exchange_rate",
-        "disclose:exchange_rate_period_days"
-      ],
-      "attested_at": "2026-02-01T00:00:00Z",
-      "expires_at": "2026-08-01T00:00:00Z",
-      "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-      "signing_key_id": "loop-2026"
-    },
-    {
-      "verifier_id": "narvar.com",
-      "verifier_name": "Narvar",
-      "attested_attributes": [
-        "disclose:on_time_shipment_rate",
-        "disclose:on_time_shipment_rate_period_days",
-        "disclose:order_accuracy_rate",
-        "disclose:order_accuracy_rate_period_days"
-      ],
-      "attested_at": "2026-02-10T00:00:00Z",
-      "expires_at": "2026-08-10T00:00:00Z",
-      "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
-      "signing_key_id": "narvar-2026"
-    }
-  ]
-}
-```
-
----
-
-## Security
-
-### Transport Security
-
-All Disclose endpoints MUST be served over HTTPS. HTTP requests MUST be rejected or redirected.
-
-### Signature Verification
-
-Agents MUST verify attestation signatures before treating any attested attribute as verified. The verification flow is:
-
-1. Fetch the Verifier Registry and confirm the `verifier_id` is listed with `status: active`.
-2. Fetch the Verifier's signing keys from their `keys_url`.
-3. Locate the key matching `signing_key_id`.
-4. Reconstruct the canonical attestation payload.
-5. Verify the ES256 signature against the payload using the public key.
-6. Confirm `attested_at` is in the past and `expires_at` (if present) is in the future.
-
-Agents MUST reject attestations that fail any step of this verification flow.
-
-### Domain Binding
-
-The `merchant_domain` field in the disclosure document MUST match the domain from which the document was served. Agents MUST reject documents where these do not match.
-
-### Replay Prevention
-
-Attestations include `attested_at` and `expires_at` timestamps. Agents SHOULD treat expired attestations as unverified, equivalent to self-reported attributes.
-
----
-
-## Agent Consumption Guidelines
-
-Agents consuming Disclose data operate with significant discretion. The framework does not mandate how agents weight or surface disclosure signals — this is intentionally left to the platform and agent developer. The following are non-normative recommendations:
-
-- Unattested attributes should be surfaced as merchant-reported and weighted accordingly.
-- Attested attributes should be surfaced as independently verified, with the Verifier named when relevant to the buyer.
-- Subjective & Qualitative signals (see Standard Attributes) should be distinguished from operational metrics when surfaced to buyers. Agents SHOULD treat `disclose:review_rating` as contextual rather than authoritative, and SHOULD surface `disclose:review_verified_purchase_rate` alongside it wherever possible. Agents SHOULD additionally surface `disclose:review_recency_90d_rate` or `disclose:review_recency_365d_rate` where available, as review freshness materially affects the evidential weight of aggregate ratings.
-- Missing disclosures may be surfaced as "disclosure unavailable" rather than assumed positive or negative.
-- Agents SHOULD NOT produce composite scores or trust tiers derived from Disclose attributes. Such aggregations are outside the scope of this framework and undermine the principle that trust is emergent from raw, verifiable signals.
-- Agents SHOULD NOT penalize merchants for not disclosing specific attributes unless disclosure of that attribute is required by applicable law or platform policy.
-
----
-
-## Reference Implementation
-
-To support adoption and validate the specification, the Disclose Framework provides the following reference resources at `https://github.com/disclose-framework/spec`:
-
-- **JSON Schema:** A machine-readable schema for validating disclosure documents against the specification.
-- **Validator:** A reference validator that checks a disclosure document for schema compliance, domain binding, and `_period_days` completeness.
-- **Sample document:** A complete, valid example disclosure document suitable for testing agent consumption logic.
-- **Verifier mock:** A lightweight mock Verifier endpoint for testing signature verification flows without a live Verifier integration.
-
-Implementations that conform to the specification and pass the reference validator MAY self-identify as Disclose-compatible.
-
----
-
-## Versioning
-
-### Version Format
-
-Disclose uses semantic versioning in the format `MAJOR.MINOR` (e.g., `0.1`, `1.0`). The version is declared in the disclosure document via the `disclose_version` field.
-
-### Backwards Compatibility
-
-The following changes MAY be introduced without a version increment:
-
-- Adding new optional attributes to the standard attribute set
-- Adding new optional fields to the attestation object
-- Adding new Verifier entries to the registry
-- Verifiers publishing benchmark documents prior to a formal benchmark extension specification
-
-The following changes MUST result in a new MAJOR version:
-
-- Removing or renaming existing attributes
-- Changing the attestation payload structure or signature algorithm
-- Modifying the discovery endpoint path
-
----
-
-## Glossary
-
-| Term | Definition |
-|------|------------|
-| Agent | A platform, AI assistant, or automated system that queries Disclose data on behalf of a buyer |
-| Attestation | A cryptographically signed statement from a Verifier confirming that specific disclosed attributes have been independently verified |
-| Benchmark Reference | An optional pointer to a Verifier-published document providing vertical or category-level distributions for disclosed attributes. Reserved for a future extension; see `disclose:benchmark_ref`. |
-| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose` |
-| Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
-| Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate |
-| Merchant | The entity selling goods or services, who publishes disclosure data under their own domain |
-| Merchant Sovereignty | The principle that merchants retain full control over what they disclose, to whom, and when |
-| Observation Window | The time period over which a metric is computed, declared via a companion `_period_days` attribute |
-| Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time |
-| Review Recency | The proportion of a merchant's total reviews that were submitted within a recent time window (90 or 365 days), used to assess the freshness and ongoing relevance of aggregate review ratings |
-| Selective Disclosure | The ability to disclose specific attributes without an all-or-nothing requirement |
-| Subjective & Qualitative Signals | Disclosure attributes that are human-assessed rather than operationally derived, such as review ratings. Included in the schema for their recognized signal value but distinguished from behavioral metrics in weighting guidance. |
-| Verifier | An authorized third party that cryptographically attests to the accuracy of specific merchant disclosures |
-| Verifier Registry | The canonical, publicly accessible list of authorized Disclose Verifiers maintained by the framework governing body |
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disclose Framework — Standard Attributes v0.2</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: #fff;
+  }
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.4rem; font-weight: 700; margin-top: 3rem; margin-bottom: 0.5rem; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.4rem; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; color: #111; }
+  p { margin: 0.6rem 0 1rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+  th { background: #f5f5f5; text-align: left; padding: 0.5rem 0.75rem; border: 1px solid #ddd; font-weight: 600; }
+  td { padding: 0.5rem 0.75rem; border: 1px solid #ddd; vertical-align: top; }
+  td code, th code { background: #f0f0f0; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace; }
+  code { background: #f0f0f0; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace; }
+  pre { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+  .new-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 3px; margin-left: 0.4rem; vertical-align: middle; letter-spacing: 0.05em; }
+  .category-intro { color: #444; margin-bottom: 1rem; font-size: 0.95rem; }
+  .toc { background: #f9f9f9; border: 1px solid #e5e5e5; border-radius: 6px; padding: 1rem 1.5rem; margin: 1.5rem 0 2rem; }
+  .toc h4 { margin: 0 0 0.5rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: #666; }
+  .toc ol { margin: 0; padding-left: 1.25rem; }
+  .toc li { margin: 0.2rem 0; font-size: 0.9rem; }
+  .toc a { color: #0066cc; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .note { background: #fffbea; border-left: 3px solid #f0c040; padding: 0.6rem 1rem; margin: 0.75rem 0 1rem; font-size: 0.9rem; color: #555; }
+  hr { border: none; border-top: 1px solid #e5e5e5; margin: 2.5rem 0; }
+</style>
+</head>
+<body>
+
+<h1>Disclose Framework</h1>
+<p style="color:#666; margin-top:0.25rem;">Standard Attributes — Specification v0.2</p>
+
+<div class="toc">
+  <h4>Categories</h4>
+  <ol>
+    <li><a href="#product-quality">Product Quality</a></li>
+    <li><a href="#returns-refunds">Returns &amp; Refunds</a></li>
+    <li><a href="#fulfillment">Fulfillment</a></li>
+    <li><a href="#inventory">Inventory &amp; Availability</a> <span class="new-badge">NEW</span></li>
+    <li><a href="#shipping-delivery">Shipping &amp; Delivery Experience</a> <span class="new-badge">NEW</span></li>
+    <li><a href="#financial-risk">Financial Risk</a></li>
+    <li><a href="#customer-support">Customer Support</a></li>
+    <li><a href="#pricing-conversion">Pricing &amp; Conversion</a></li>
+    <li><a href="#subscriptions">Subscriptions</a></li>
+    <li><a href="#sustainability-ethics">Sustainability &amp; Ethics</a></li>
+    <li><a href="#identity-legitimacy">Identity &amp; Legitimacy</a> <span class="new-badge">NEW</span></li>
+    <li><a href="#review-signals">Review Signals</a></li>
+  </ol>
+</div>
+
+<h2>Standard Attributes</h2>
+<p>The following attributes are defined in this version of the specification. All are optional unless noted. Time-bounded metrics default to a 90-day observation window unless the corresponding <code>_period_days</code> attribute specifies otherwise.</p>
+<p>Attributes marked <span class="new-badge">NEW</span> were added in v0.2.</p>
+
+<hr>
+
+<h2 id="product-quality">1. Product Quality</h2>
+<p class="category-intro">Operational signals about product performance derived from post-purchase behaviour. These reflect what buyers actually did — returned, repurchased, reported defective — rather than what they said.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:repeat_purchase_rate</code></td><td>decimal</td><td>Rate of buyers who make a second purchase within the observation window (0–1)</td></tr>
+    <tr><td><code>disclose:repeat_purchase_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:product_return_rate</code></td><td>decimal</td><td>Rate of units returned across all orders (0–1). Measured as returned units divided by shipped units. May be disclosed at SKU or category level.</td></tr>
+    <tr><td><code>disclose:product_return_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:product_defect_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of units reported defective or dead-on-arrival at delivery (0–1). Distinct from return rate: captures manufacturing and quality control failures before buyer decision.</td></tr>
+    <tr><td><code>disclose:product_defect_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:size_accuracy_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of orders where the delivered item matched the size or fit specified at purchase (0–1). Primarily relevant for apparel, footwear, and sized goods. Derived from return reason codes where available.</td></tr>
+    <tr><td><code>disclose:size_accuracy_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+  </tbody>
+</table>
+<div class="note"><strong>Measurement note — return rate:</strong> Measured as returned units divided by total shipped units within the observation window. Exchanges (where the buyer selects a replacement item) are NOT counted as returns. Returnless refunds where no item is physically returned ARE counted. Where a Verifier attests this attribute, the Verifier's methodology governs.</div>
+
+<hr>
+
+<h2 id="returns-refunds">2. Returns &amp; Refunds</h2>
+<p class="category-intro">Policy and performance signals covering the full returns lifecycle: what the merchant promises (policy), what they deliver (processing time), and how buyers respond (exchange vs. refund).</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:return_policy_type</code></td><td>string</td><td>One of: <code>free</code>, <code>label_fee</code>, <code>buyer_pays</code>, <code>no_returns</code></td></tr>
+    <tr><td><code>disclose:return_window_days</code></td><td>integer</td><td>Number of days a buyer has to initiate a return</td></tr>
+    <tr><td><code>disclose:return_label_cost</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Cost of the return label in the merchant's primary currency, where <code>return_policy_type</code> is <code>label_fee</code>. Agents SHOULD surface this value alongside return policy type.</td></tr>
+    <tr><td><code>disclose:refund_processing_time_median_days</code></td><td>decimal</td><td>Median business days from warehouse receipt of returned item to refund completion. Clock starts at receipt at merchant's return facility, not at return initiation or carrier pickup.</td></tr>
+    <tr><td><code>disclose:refund_processing_time_p90_days</code></td><td>decimal</td><td>90th percentile business days from warehouse receipt to refund completion (same clock-start as median)</td></tr>
+    <tr><td><code>disclose:exchange_rate</code></td><td>decimal</td><td>Rate of return transactions where the buyer selected a replacement item rather than a refund (0–1). A higher exchange rate signals product confidence and buyer intent to remain a customer.</td></tr>
+    <tr><td><code>disclose:exchange_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:returnless_refund_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of refunds issued without requiring the buyer to return the item (0–1). A higher rate signals merchant confidence in product quality and low unit economics on returns.</td></tr>
+    <tr><td><code>disclose:returnless_refund_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:return_reason_top_category</code> <span class="new-badge">NEW</span></td><td>string</td><td>The most frequently cited return reason category within the observation window. Recommended values: <code>sizing</code>, <code>defective</code>, <code>not_as_described</code>, <code>changed_mind</code>, <code>arrived_late</code>, <code>other</code>.</td></tr>
+    <tr><td><code>disclose:international_return_supported</code> <span class="new-badge">NEW</span></td><td>boolean</td><td>Whether the merchant supports returns from buyers outside the merchant's primary operating country.</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="fulfillment">3. Fulfillment</h2>
+<p class="category-intro">Operational signals covering the merchant's warehouse-side fulfillment performance: whether orders leave correctly and on time. For signals covering what happens after carrier handoff, see <a href="#shipping-delivery">Shipping &amp; Delivery Experience</a>.</p>
+
+<h3>Shipment Reliability</h3>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:on_time_shipment_rate</code></td><td>decimal</td><td>Rate of orders shipped within the merchant's stated fulfillment window (0–1)</td></tr>
+    <tr><td><code>disclose:on_time_shipment_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:shipment_delay_median_hours</code></td><td>decimal</td><td>Median hours by which late shipments missed the promised fulfillment window</td></tr>
+    <tr><td><code>disclose:shipment_delay_p90_hours</code></td><td>decimal</td><td>90th percentile hours by which late shipments missed the promised fulfillment window</td></tr>
+    <tr><td><code>disclose:same_day_fulfillment_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of orders shipped on the same calendar day as placement, for orders placed before the merchant's same-day cutoff time (0–1). Agents SHOULD surface this for time-sensitive purchases.</td></tr>
+    <tr><td><code>disclose:same_day_fulfillment_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:fulfillment_location_count</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Number of distinct warehouse or fulfillment locations the merchant ships from. A higher count signals distributed inventory and reduced average transit distance.</td></tr>
+  </tbody>
+</table>
+
+<h3>Order Accuracy</h3>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:order_accuracy_rate</code></td><td>decimal</td><td>Rate of orders fulfilled without incorrect or damaged items (0–1)</td></tr>
+    <tr><td><code>disclose:order_accuracy_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:incorrect_item_rate</code></td><td>decimal</td><td>Rate of orders containing a wrong item (0–1)</td></tr>
+    <tr><td><code>disclose:damaged_item_rate</code></td><td>decimal</td><td>Rate of orders containing a damaged item at delivery (0–1)</td></tr>
+    <tr><td><code>disclose:carrier_on_time_delivery_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of shipments delivered on time per the carrier's own estimated delivery date (0–1). Distinguishes merchant-side fulfillment delays from carrier-side delivery delays.</td></tr>
+    <tr><td><code>disclose:carrier_on_time_delivery_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="inventory">4. Inventory &amp; Availability <span class="new-badge">NEW</span></h2>
+<p class="category-intro">Signals about whether products are actually available when an agent attempts to purchase. Inventory failures are a critical agentic commerce failure mode — an agent that recommends an out-of-stock product, or places an order against inaccurate inventory, has failed the buyer regardless of all other merchant quality signals.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:in_stock_rate</code></td><td>decimal</td><td>Rate at which listed products are in stock at the time of order placement (0–1), measured across all active SKUs within the observation window.</td></tr>
+    <tr><td><code>disclose:in_stock_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:stockout_frequency_rate</code></td><td>decimal</td><td>Rate of active SKUs that experienced at least one stockout during the observation window (0–1). A higher rate signals inventory planning weaknesses.</td></tr>
+    <tr><td><code>disclose:stockout_frequency_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:backorder_rate</code></td><td>decimal</td><td>Proportion of orders placed against backordered inventory (0–1). Agents SHOULD surface this to buyers who have expressed time-sensitivity.</td></tr>
+    <tr><td><code>disclose:backorder_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:inventory_accuracy_rate</code></td><td>decimal</td><td>Rate at which displayed inventory levels match actual warehouse counts at the time of order (0–1). Mismatches result in post-order cancellations — a significant buyer trust failure.</td></tr>
+    <tr><td><code>disclose:inventory_accuracy_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:pre_order_fulfillment_rate</code></td><td>decimal</td><td>For merchants who accept pre-orders: rate of pre-orders fulfilled on or before the stated availability date (0–1). Omit if the merchant does not offer pre-orders.</td></tr>
+    <tr><td><code>disclose:pre_order_fulfillment_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="shipping-delivery">5. Shipping &amp; Delivery Experience <span class="new-badge">NEW</span></h2>
+<p class="category-intro">Post-handoff signals covering what the buyer actually experiences after an order leaves the merchant's facility. Distinct from Fulfillment, which measures warehouse-side operations. These signals require carrier tracking data and are natural attestation targets for post-purchase platforms such as Narvar and AfterShip.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:delivered_on_time_rate</code></td><td>decimal</td><td>Rate of orders delivered by the date promised to the buyer at checkout (0–1). Distinct from <code>disclose:on_time_shipment_rate</code>, which measures warehouse departure. This is the signal buyers actually experience.</td></tr>
+    <tr><td><code>disclose:delivered_on_time_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:tracking_provided_rate</code></td><td>decimal</td><td>Rate of orders for which tracking information was provided to the buyer (0–1).</td></tr>
+    <tr><td><code>disclose:tracking_provided_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:delivery_attempt_success_rate</code></td><td>decimal</td><td>Rate of shipments successfully delivered on the first carrier attempt (0–1). Failed first attempts result in buyer inconvenience and delay.</td></tr>
+    <tr><td><code>disclose:delivery_attempt_success_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:average_transit_days</code></td><td>decimal</td><td>Median calendar days from ship date to confirmed delivery within the observation window.</td></tr>
+    <tr><td><code>disclose:average_transit_days_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:carrier_selection_count</code></td><td>integer</td><td>Number of distinct carriers used by the merchant. A higher count signals redundancy and rate optimization capacity.</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="financial-risk">6. Financial Risk</h2>
+<p class="category-intro">Signals about transaction integrity and payment reliability. Agents handling autonomous purchases on behalf of buyers have an elevated duty to assess financial risk before recommending a transaction.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:chargeback_rate</code></td><td>decimal</td><td>Chargebacks as a proportion of total transactions (0–1)</td></tr>
+    <tr><td><code>disclose:chargeback_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:dispute_win_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of disputed transactions resolved in the merchant's favour (0–1). Provides context for chargeback rate: a merchant with low chargebacks and a high dispute win rate has a materially stronger financial risk profile than chargeback rate alone would indicate.</td></tr>
+    <tr><td><code>disclose:dispute_win_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:fraud_order_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of orders identified as fraudulent and cancelled prior to fulfillment (0–1). Signals the merchant's fraud detection maturity and platform security posture.</td></tr>
+    <tr><td><code>disclose:fraud_order_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:payment_method_coverage</code> <span class="new-badge">NEW</span></td><td>array of strings</td><td>Payment methods accepted by the merchant. Recommended values: <code>card</code>, <code>paypal</code>, <code>apple_pay</code>, <code>google_pay</code>, <code>shop_pay</code>, <code>buy_now_pay_later</code>, <code>crypto</code>, <code>bank_transfer</code>. Agents SHOULD verify payment method compatibility before initiating checkout.</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="customer-support">7. Customer Support</h2>
+<p class="category-intro">Signals about the quality, speed, and accessibility of the merchant's customer support. For agentic purchases, post-purchase support access is a material risk factor — an agent that cannot escalate a buyer issue has limited recourse.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:support_resolution_time_median_hours</code></td><td>decimal</td><td>Median hours from support contact initiation to issue resolution</td></tr>
+    <tr><td><code>disclose:support_resolution_time_p90_hours</code></td><td>decimal</td><td>90th percentile hours from support contact to resolution</td></tr>
+    <tr><td><code>disclose:support_channel_availability</code> <span class="new-badge">NEW</span></td><td>array of strings</td><td>Support channels available to buyers. Recommended values: <code>live_chat</code>, <code>email</code>, <code>phone</code>, <code>sms</code>, <code>social</code>, <code>self_serve</code>. Agents SHOULD surface available channels when escalation may be needed.</td></tr>
+    <tr><td><code>disclose:support_hours_coverage</code> <span class="new-badge">NEW</span></td><td>string</td><td>Hours during which live support is available. Recommended values: <code>24_7</code>, <code>business_hours</code>, <code>extended_hours</code>, <code>async_only</code>.</td></tr>
+    <tr><td><code>disclose:first_contact_resolution_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of support contacts resolved without requiring a follow-up interaction (0–1). A strong signal of support quality and operational maturity.</td></tr>
+    <tr><td><code>disclose:first_contact_resolution_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="pricing-conversion">8. Pricing &amp; Conversion</h2>
+<p class="category-intro">Signals about pricing integrity and buyer behaviour. These attributes help agents distinguish merchants with stable, honest pricing from those engaged in discount theater — artificial inflation followed by manufactured discounts.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:average_discount_rate</code></td><td>decimal</td><td>Average discount applied across completed transactions as a proportion of list price (0–1)</td></tr>
+    <tr><td><code>disclose:average_discount_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:search_to_conversion_rate</code></td><td>decimal</td><td>Rate of product page visits that result in a completed purchase (0–1). Signals demand authenticity and product-market fit.</td></tr>
+    <tr><td><code>disclose:price_stability_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of active SKUs whose listed price did not change during the observation window (0–1). A low rate may indicate dynamic or promotional pricing practices that affect the reliability of displayed prices.</td></tr>
+    <tr><td><code>disclose:price_stability_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+    <tr><td><code>disclose:dynamic_pricing_used</code> <span class="new-badge">NEW</span></td><td>boolean</td><td>Whether the merchant uses algorithmic or demand-based dynamic pricing. Agents SHOULD surface this to buyers when the purchase context is price-sensitive.</td></tr>
+    <tr><td><code>disclose:promotional_frequency_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Proportion of days within the observation window on which at least one active site-wide or category-level promotion was running (0–1). A rate approaching 1.0 suggests the merchant's list price does not reflect the price at which goods typically transact — a discount theater signal.</td></tr>
+    <tr><td><code>disclose:promotional_frequency_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 90)</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="subscriptions">9. Subscriptions</h2>
+<p class="category-intro">Signals relevant to subscription products. These attributes apply only to merchants offering recurring purchase programmes. Agents evaluating subscription purchases face asymmetric risk: the buyer commits to ongoing charges while cancellation friction varies widely across merchants.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:subscription_churn_rate</code></td><td>decimal</td><td>Rate of active subscriptions cancelled within the observation window (0–1)</td></tr>
+    <tr><td><code>disclose:subscription_churn_rate_period_days</code></td><td>integer</td><td>Observation window in days (default: 30)</td></tr>
+    <tr><td><code>disclose:subscription_cancel_online</code></td><td>boolean</td><td>Whether subscriptions can be cancelled without contacting support</td></tr>
+    <tr><td><code>disclose:subscription_pause_available</code></td><td>boolean</td><td>Whether subscriptions can be paused without cancelling</td></tr>
+    <tr><td><code>disclose:subscription_trial_days</code></td><td>integer</td><td>Free trial duration in days, if offered. Omit if no trial is available.</td></tr>
+    <tr><td><code>disclose:subscription_price_change_notice_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Minimum number of days notice the merchant provides to subscribers before a price increase takes effect. A higher value signals buyer-friendly pricing governance.</td></tr>
+    <tr><td><code>disclose:subscription_skip_available</code> <span class="new-badge">NEW</span></td><td>boolean</td><td>Whether subscribers can skip an individual delivery without pausing or cancelling the subscription.</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="sustainability-ethics">10. Sustainability &amp; Ethics</h2>
+<p class="category-intro">Certification-based signals about the merchant's environmental and ethical practices. These are naturally suited to third-party attestation: certifying bodies are ideal Verifier candidates for this category.</p>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:sustainability_certified</code></td><td>boolean</td><td>Whether the merchant holds a recognized sustainability certification</td></tr>
+    <tr><td><code>disclose:sustainability_certifier</code></td><td>string</td><td>Name of the certifying body (e.g., <code>B Corp</code>, <code>1% for the Planet</code>)</td></tr>
+    <tr><td><code>disclose:ethical_sourcing_certified</code></td><td>boolean</td><td>Whether the merchant holds a recognized ethical sourcing certification</td></tr>
+    <tr><td><code>disclose:carbon_neutral_certified</code> <span class="new-badge">NEW</span></td><td>boolean</td><td>Whether the merchant holds a recognized carbon neutral certification, distinct from general sustainability accreditation.</td></tr>
+    <tr><td><code>disclose:carbon_neutral_certifier</code> <span class="new-badge">NEW</span></td><td>string</td><td>Name of the carbon neutral certifying body (e.g., <code>Climate Neutral</code>, <code>Carbon Trust</code>)</td></tr>
+    <tr><td><code>disclose:living_wage_certified</code> <span class="new-badge">NEW</span></td><td>boolean</td><td>Whether the merchant holds a recognized living wage certification for their workforce.</td></tr>
+    <tr><td><code>disclose:country_of_manufacture</code> <span class="new-badge">NEW</span></td><td>string or array of strings</td><td>ISO 3166-1 alpha-2 country code(s) where the merchant's products are manufactured. Relevant for ethical sourcing context and geopolitical supply chain risk assessment.</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="identity-legitimacy">11. Identity &amp; Legitimacy <span class="new-badge">NEW</span></h2>
+<p class="category-intro">Signals that help agents distinguish legitimate merchants from fraudulent storefronts, impersonation attempts, and fly-by-night operators. This is the category most resistant to gaming: the signals are grounded in external registries — business registration databases, domain history, trademark records — rather than behavioral data the merchant controls. As agentic commerce scales, counterfeit merchant risk becomes a material threat vector that no existing trust signal framework addresses.</p>
+<div class="note"><strong>Verification note:</strong> Attributes in this category are particularly well-suited to third-party attestation. Business registry verifiers, WHOIS data providers, and trademark database services are natural Verifier candidates. Self-reported values in this category carry meaningfully less evidential weight than attested values and SHOULD be weighted accordingly by agents.</div>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:business_registration_verified</code></td><td>boolean</td><td>Whether the merchant's legal business registration has been verified by a third party against a government business registry. Agents SHOULD weight attested values materially higher than self-reported values for this attribute.</td></tr>
+    <tr><td><code>disclose:domain_age_days</code></td><td>integer</td><td>Age of the merchant's primary domain in days as of the disclosure document's <code>issued_at</code> date. Derived from WHOIS registration data. Older domains carry meaningfully higher legitimacy signal for first-time buyer interactions.</td></tr>
+    <tr><td><code>disclose:trademark_registered</code></td><td>boolean</td><td>Whether the merchant's brand name is registered as a trademark in at least one major jurisdiction.</td></tr>
+    <tr><td><code>disclose:platform_seller_tenure_days</code></td><td>integer</td><td>Number of days the merchant has been an active seller on their primary commerce platform as of <code>issued_at</code>. Attested by the platform. Longer tenure is a strong signal against fraudulent storefronts.</td></tr>
+    <tr><td><code>disclose:platform_seller_tenure_platform</code></td><td>string</td><td>The platform to which <code>disclose:platform_seller_tenure_days</code> refers (e.g., <code>shopify</code>, <code>amazon</code>, <code>etsy</code>).</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2 id="review-signals">12. Review Signals</h2>
+<p class="category-intro">Signals derived from buyer reviews and ratings. These differ from operational metrics: they are human-assessed rather than operationally derived, and more susceptible to manipulation. They are included because they carry recognized signal value for agents and buyers. Agents SHOULD weight review signals in combination with operational metrics rather than in isolation.</p>
+<div class="note"><strong>Recency matters:</strong> A merchant with 10,000 lifetime reviews but minimal recent activity has a materially different trust profile than a merchant with comparable volume and active ongoing engagement. Agents SHOULD weight <code>disclose:review_recency_90d_rate</code> and <code>disclose:review_recency_365d_rate</code> when interpreting <code>disclose:review_rating</code>.</div>
+<table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>disclose:review_rating</code></td><td>decimal</td><td>Aggregate review score on a 0–5 scale</td></tr>
+    <tr><td><code>disclose:review_count</code></td><td>integer</td><td>Total number of reviews included in the aggregate rating</td></tr>
+    <tr><td><code>disclose:review_verified_purchase_rate</code></td><td>decimal</td><td>Proportion of reviews attributed to verified purchases (0–1). The most manipulation-resistant of the review signals.</td></tr>
+    <tr><td><code>disclose:review_recency_90d_rate</code></td><td>decimal</td><td>Proportion of total reviews submitted within the last 90 days (0–1). Signals active and ongoing customer engagement.</td></tr>
+    <tr><td><code>disclose:review_recency_365d_rate</code></td><td>decimal</td><td>Proportion of total reviews submitted within the last 365 days (0–1). Provides a longer-horizon view of review activity relative to lifetime review volume.</td></tr>
+    <tr><td><code>disclose:review_platform</code> <span class="new-badge">NEW</span></td><td>string</td><td>The platform or source from which review data is derived. Recommended values: <code>own_site</code>, <code>google</code>, <code>trustpilot</code>, <code>yotpo</code>, <code>okendo</code>, <code>judge_me</code>, <code>other</code>. Agents SHOULD weight reviews from independent platforms higher than merchant-hosted reviews.</td></tr>
+    <tr><td><code>disclose:review_response_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Rate of reviews to which the merchant has posted a public response (0–1). Signals active merchant engagement with buyer feedback.</td></tr>
+    <tr><td><code>disclose:review_response_rate_period_days</code> <span class="new-badge">NEW</span></td><td>integer</td><td>Observation window in days (default: 365)</td></tr>
+    <tr><td><code>disclose:negative_review_rate</code> <span class="new-badge">NEW</span></td><td>decimal</td><td>Proportion of total reviews rated 2 stars or below (0–1). More granular than aggregate rating: a merchant with a 4.2 average but an 18% negative review rate has a materially different risk profile than one with a 4.2 average and a 4% negative review rate.</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>Attribute Count Summary</h2>
+<table>
+  <thead><tr><th>Category</th><th>v0.1</th><th>Added in v0.2</th><th>v0.2 Total</th></tr></thead>
+  <tbody>
+    <tr><td>1. Product Quality</td><td>4</td><td>+4</td><td>8</td></tr>
+    <tr><td>2. Returns &amp; Refunds</td><td>6</td><td>+5</td><td>11</td></tr>
+    <tr><td>3. Fulfillment</td><td>8</td><td>+4</td><td>12</td></tr>
+    <tr><td>4. Inventory &amp; Availability</td><td>—</td><td>+10</td><td>10</td></tr>
+    <tr><td>5. Shipping &amp; Delivery Experience</td><td>—</td><td>+9</td><td>9</td></tr>
+    <tr><td>6. Financial Risk</td><td>2</td><td>+5</td><td>7</td></tr>
+    <tr><td>7. Customer Support</td><td>2</td><td>+5</td><td>7</td></tr>
+    <tr><td>8. Pricing &amp; Conversion</td><td>2</td><td>+6</td><td>8</td></tr>
+    <tr><td>9. Subscriptions</td><td>5</td><td>+2</td><td>7</td></tr>
+    <tr><td>10. Sustainability &amp; Ethics</td><td>3</td><td>+5</td><td>8</td></tr>
+    <tr><td>11. Identity &amp; Legitimacy</td><td>—</td><td>+5</td><td>5</td></tr>
+    <tr><td>12. Review Signals</td><td>5</td><td>+4</td><td>9</td></tr>
+    <tr style="font-weight:bold; background:#f5f5f5;"><td>Total (inc. _period_days)</td><td>37</td><td>+64</td><td>101</td></tr>
+    <tr style="font-weight:bold; background:#f0f0f0;"><td>Substantive signals only</td><td>~24</td><td>+~37</td><td>~61</td></tr>
+  </tbody>
+</table>
+<p style="color:#555; font-size:0.9rem;">Substantive signal count excludes <code>_period_days</code> companion fields. "60+ signals across 12 categories" is an accurate characterisation of v0.2.</p>
+
+</body>
+</html>
