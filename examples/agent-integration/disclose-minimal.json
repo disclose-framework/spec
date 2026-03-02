@@ -1,0 +1,20 @@
+{
+  "@context": "https://discloseframework.dev/schema/v1",
+  "@type": "MerchantDisclosure",
+  "schema_version": "1.0",
+  "issued_at": "2026-03-01T00:00:00Z",
+  "merchant": {
+    "name": "Your Store Name",
+    "domain": "yourdomain.com"
+  },
+  "signals": {
+    "fulfillment_time_days_median": 2.0
+  },
+  "permitted_use": {
+    "agent_query": true,
+    "aggregation": false,
+    "commercial_resale": false,
+    "attribution_required": true,
+    "attribution_text": "Data self-disclosed by yourdomain.com via Disclose Framework"
+  }
+}
