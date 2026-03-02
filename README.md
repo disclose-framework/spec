@@ -1,6 +1,6 @@
 # Disclose Framework
 
-**Open-source transparency infrastructure for agentic commerce.**
+Open-source transparency infrastructure for agentic commerce.
 
 Disclose is an open standard that enables merchants to publish verified, machine-readable disclosures about their business practices — and enables AI agents to consume those disclosures when making or informing purchasing decisions on behalf of buyers.
 
@@ -30,19 +30,26 @@ Trust is not assigned by the framework. It emerges from visible, verifiable merc
 
 ## What Merchants Disclose
 
-Disclose defines a standard attribute set covering the core dimensions an agent must evaluate before recommending a purchase:
+Disclose defines a standard attribute set across 12 signal categories covering the core dimensions an agent must evaluate before recommending a purchase:
 
 | Signal Category | Example Attributes |
-|-----------------|-------------------|
-| **Product Quality** | Repeat purchase rate, product return rate |
-| **Returns & Refunds** | Return policy type, refund processing time, exchange rate |
-| **Fulfillment Reliability** | On-time shipment rate, order accuracy rate |
-| **Financial Risk** | Chargeback rate |
-| **Customer Support** | Support resolution time |
-| **Pricing Integrity** | Average discount rate |
-| **Subscriptions** | Churn rate, online cancellation availability |
+|---|---|
+| Product Quality | Repeat purchase rate, return rate, defect rate |
+| Returns & Refunds | Return policy, refund processing time, returnless refund rate |
+| Fulfillment | On-time shipment rate, order accuracy, same-day fulfillment rate |
+| Inventory & Availability | In-stock rate, inventory accuracy, backorder rate |
+| Shipping & Delivery Experience | Delivered on time rate, average transit days, tracking rate |
+| Financial Risk | Chargeback rate, dispute win rate, payment method coverage |
+| Customer Support | Resolution time, first contact resolution rate, support channels |
+| Pricing & Conversion | Average discount rate, price stability, promotional frequency |
+| Subscriptions | Churn rate, cancellation availability, skip availability |
+| Sustainability & Ethics | Certifications, carbon neutral status, country of manufacture |
+| Identity & Legitimacy | Business registration, domain age, platform seller tenure |
+| Review Signals | Rating, verified purchase rate, recency, review platform |
 
-Every metric is time-bounded, behavior-based, and grounded in recorded outcomes — not assertions. Merchants disclose what happened, not what they claim.
+Every metric is time-bounded, behaviour-based, and grounded in recorded outcomes — not assertions. Merchants disclose what happened, not what they claim.
+
+60+ signals across 12 categories. All optional. All machine-readable.
 
 ---
 
@@ -59,10 +66,9 @@ Every metric is time-bounded, behavior-based, and grounded in recorded outcomes 
 ## Quick Start
 
 A minimal disclosure document looks like this:
-
 ```json
 {
-  "disclose_version": "0.1",
+  "disclose_version": "0.2",
   "merchant_domain": "merchant.example.com",
   "issued_at": "2026-02-24T00:00:00Z",
   "expires_at": "2026-05-24T00:00:00Z",
@@ -88,10 +94,10 @@ Publish this at `/.well-known/disclose` on your domain. That's a valid Disclose 
 ## Specification
 
 | Document | Description |
-|----------|-------------|
-| [Specification](https://github.com/disclose-framework/spec/blob/main/specification/overview.md) | Full specification: schema, attributes, attestations, verifier registry, governance, security, and versioning |
+|---|---|
+| [Specification](specification/overview.md) | Full specification: schema, attributes, attestations, verifier registry, governance, security, and versioning |
 
-This is a v0.1 draft. The specification is open for review and comment.
+This is a v0.2 draft. The specification is open for review and comment.
 
 ---
 
@@ -99,7 +105,7 @@ This is a v0.1 draft. The specification is open for review and comment.
 
 This specification is in active development. Current priorities:
 
-**Verifier partners** — Platforms with access to merchant operational data (returns processors, fulfillment providers, payment platforms) interested in becoming authorized attestors. Verifiers are listed in the public registry and cryptographically sign attestations for the attributes they are authorized to verify. [See the Verifier Registry governance process →](specification/overview.md#registry-governance)
+**Verifier partners** — Platforms with access to merchant operational data (returns processors, fulfillment providers, post-purchase platforms, payment processors) interested in becoming authorized attestors. Verifiers are listed in the public registry and cryptographically sign attestations for the attributes they are authorized to verify. [See the Verifier Registry governance process →](specification/overview.md#registry-governance)
 
 **Agent platform partners** — AI agent developers and commerce platforms interested in consuming Disclose signals to inform purchasing recommendations.
 
@@ -115,10 +121,10 @@ The shift to agentic commerce is happening faster than the trust infrastructure 
 
 ## Contributing
 
-Feedback, corrections, and proposals are welcome via [Issues](../../issues). This is an open standard. The goal is broad adoption, not ownership.
+Feedback, corrections, and proposals are welcome via Issues. This is an open standard. The goal is broad adoption, not ownership.
 
 ---
 
 ## License
 
-This specification is published under the [Apache License 2.0](LICENSE).
+This specification is published under the Apache License 2.0.
