@@ -125,6 +125,10 @@ Feedback, corrections, and proposals are welcome via Issues. This is an open sta
 
 ---
 
-## License
+## Authors & Maintenance
+* **Daniel Whitefield** - *Initial Work / Founder* - [danielwhitefield](https://github.com/danielwhitefield)
 
-This specification is published under the Apache License 2.0.
+---
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
