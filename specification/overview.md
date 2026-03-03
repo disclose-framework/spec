@@ -1,4 +1,4 @@
-# Disclose Framework — Official Specification v0.2
+# Disclose Framework — Official Specification
 
 ## Overview
 
@@ -87,6 +87,92 @@ No single dimension dominates. Agents weight these signals according to their ow
 
 ---
 
+## Disclosure Scopes
+
+The Disclose Framework organizes disclosure signals across three scopes. Every `disclose:` property belongs to one or more scopes. The scope is determined by the schema.org node type to which the property is attached — no additional metadata is required.
+
+**Merchant → Offer → Item**
+
+A Merchant makes an Offer on an Item. This three-node model maps directly to established schema.org types, consistent with the framework's goal of becoming a recognized schema.org extension:
+
+| Disclose Term | schema.org Type | What it represents |
+|---|---|---|
+| **Merchant** | `schema:Organization` | The seller entity publishing disclosure signals |
+| **Offer** | `schema:Offer` | A specific Merchant's commercial terms for a specific Item |
+| **Item** | `schema:ItemOffered` | The product or service being transacted |
+
+### Signal Scope
+
+All attributes defined in this specification are **Merchant-scoped** unless explicitly noted otherwise. Merchant-scoped signals reflect aggregate operational performance across all of the merchant's transactions and SKUs.
+
+Any `disclose:` attribute MAY also be published at **Offer scope** or **Item scope** when the merchant or an authorized Verifier has signal data specific to a particular product or transaction context. When the same attribute appears at multiple scopes, agents SHOULD prefer the most specific scope available.
+
+| Scope | Node type | What it signals | Example |
+|---|---|---|---|
+| **Merchant** | `schema:Organization` | Aggregate performance across all transactions | Overall return rate across all SKUs |
+| **Offer** | `schema:Offer` | Performance for this seller on this specific Item | Return rate for this SKU at this merchant |
+| **Item** | `schema:ItemOffered` | Attributes intrinsic to the item, independent of seller | Manufacturer warranty terms, safety recall status |
+
+### Scope in Practice: Vendor Comparison
+
+The Merchant → Offer → Item model enables a class of agentic query that no prior merchant signal framework supports: comparing the same Item across multiple Merchants.
+
+When an agent evaluates two Merchants selling the same Item (identified by a shared GTIN, ISBN, or manufacturer part number), it can triangulate across all three scopes:
+
+- **Item scope** confirms it is evaluating the same product
+- **Offer scope** reveals how each Merchant specifically performs on that Item (e.g., SKU-level return rate, fulfillment source, inventory accuracy)
+- **Merchant scope** provides baseline seller confidence independent of the specific Item
+
+An Offer-scoped signal takes precedence over a Merchant-scoped signal for the same attribute when both are present.
+
+### Scope in the Disclosure Document
+
+Offer-scoped and Item-scoped signals are published within the same `/.well-known/disclose` document. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
+
+```json
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "disclose": "https://discloseframework.dev/vocab#"
+  },
+  "@type": "Organization",
+  "disclose:product_return_rate": 0.07,
+  "disclose:product_return_rate_period_days": 90,
+
+  "makesOffer": [
+    {
+      "@type": "Offer",
+      "itemOffered": {
+        "@type": "Product",
+        "gtin": "00012345678905"
+      },
+      "disclose:product_return_rate": 0.03,
+      "disclose:product_return_rate_period_days": 90,
+      "disclose:inventory_accuracy_rate": 0.99,
+      "disclose:inventory_accuracy_rate_period_days": 90,
+      "disclose:avg_ship_days_sku": 1.4
+    }
+  ]
+}
+```
+
+In this example, the agent can observe that while the Merchant's overall return rate is 7%, the return rate for this specific SKU is 3% — a materially stronger signal for a purchase recommendation on this Item.
+
+### Item-Scope Signals
+
+The following attributes are particularly well-suited to Item scope, as they reflect properties intrinsic to the item rather than aggregate merchant behaviour. These are natural attestation targets for brand registries, manufacturer databases, and product data platforms:
+
+| Attribute | Item-scope meaning |
+|---|---|
+| `disclose:business_registration_verified` | Whether the seller is an authorized reseller of this Item's brand |
+| `disclose:sustainability_certified` | Whether this specific Item carries a sustainability certification |
+| `disclose:product_defect_rate` | Known defect rate for this Item across all sellers |
+| `disclose:return_policy_type` | Return policy specific to this Item (e.g., non-returnable electronics) |
+
+*The framework anticipates that dedicated Item-scope attributes — including authorized reseller status and product-level recall signals — will be formally defined in a future version of this specification.*
+
+---
+
 ## Discovery
 
 ### Publication Endpoint
@@ -144,14 +230,14 @@ The following attributes are defined in this version of the specification. All a
 1. [Product Quality](#1-product-quality)
 2. [Returns & Refunds](#2-returns--refunds)
 3. [Fulfillment](#3-fulfillment)
-4. [Inventory & Availability](#4-inventory--availability) *(new in v0.2)*
-5. [Shipping & Delivery Experience](#5-shipping--delivery-experience) *(new in v0.2)*
+4. [Inventory & Availability](#4-inventory--availability)
+5. [Shipping & Delivery Experience](#5-shipping--delivery-experience)
 6. [Financial Risk](#6-financial-risk)
 7. [Customer Support](#7-customer-support)
 8. [Pricing & Conversion](#8-pricing--conversion)
 9. [Subscriptions](#9-subscriptions)
 10. [Sustainability & Ethics](#10-sustainability--ethics)
-11. [Identity & Legitimacy](#11-identity--legitimacy) *(new in v0.2)*
+11. [Identity & Legitimacy](#11-identity--legitimacy)
 12. [Review Signals](#12-review-signals)
 
 ---
@@ -166,10 +252,10 @@ Operational signals about product performance derived from post-purchase behavio
 | `disclose:repeat_purchase_rate_period_days` | integer | Observation window in days (default: 90) |
 | `disclose:product_return_rate` | decimal | Rate of units returned across all orders (0–1). Measured as returned units divided by shipped units. May be disclosed at SKU or category level. |
 | `disclose:product_return_rate_period_days` | integer | Observation window in days (default: 90) |
-| `disclose:product_defect_rate` *(v0.2)* | decimal | Rate of units reported defective or dead-on-arrival at delivery (0–1). Distinct from return rate: captures manufacturing and quality control failures before buyer decision. |
-| `disclose:product_defect_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
-| `disclose:size_accuracy_rate` *(v0.2)* | decimal | Rate of orders where the delivered item matched the size or fit specified at purchase (0–1). Primarily relevant for apparel, footwear, and sized goods. Derived from return reason codes where available. |
-| `disclose:size_accuracy_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
+| `disclose:product_defect_rate` | decimal | Rate of units reported defective or dead-on-arrival at delivery (0–1). Distinct from return rate: captures manufacturing and quality control failures before buyer decision. |
+| `disclose:product_defect_rate_period_days` | integer | Observation window in days (default: 90) |
+| `disclose:size_accuracy_rate` | decimal | Rate of orders where the delivered item matched the size or fit specified at purchase (0–1). Primarily relevant for apparel, footwear, and sized goods. Derived from return reason codes where available. |
+| `disclose:size_accuracy_rate_period_days` | integer | Observation window in days (default: 90) |
 
 > **Measurement note — return rate:** Measured as returned units divided by total shipped units within the observation window. Exchanges (where the buyer selects a replacement item) are NOT counted as returns. Returnless refunds where no item is physically returned ARE counted. Where a Verifier attests this attribute, the Verifier's methodology governs.
 
@@ -183,15 +269,15 @@ Policy and performance signals covering the full returns lifecycle: what the mer
 |-----------|------|-------------|
 | `disclose:return_policy_type` | string | One of: `free`, `label_fee`, `buyer_pays`, `no_returns` |
 | `disclose:return_window_days` | integer | Number of days a buyer has to initiate a return |
-| `disclose:return_label_cost` *(v0.2)* | decimal | Cost of the return label in the merchant's primary currency, where `return_policy_type` is `label_fee`. Agents SHOULD surface this value alongside return policy type. |
+| `disclose:return_label_cost` | decimal | Cost of the return label in the merchant's primary currency, where `return_policy_type` is `label_fee`. Agents SHOULD surface this value alongside return policy type. |
 | `disclose:refund_processing_time_median_days` | decimal | Median business days from warehouse receipt of returned item to refund completion. Clock starts at receipt at merchant's return facility, not at return initiation or carrier pickup. |
 | `disclose:refund_processing_time_p90_days` | decimal | 90th percentile business days from warehouse receipt to refund completion (same clock-start as median) |
 | `disclose:exchange_rate` | decimal | Rate of return transactions where the buyer selected a replacement item rather than a refund (0–1). A higher exchange rate signals product confidence and buyer intent to remain a customer. |
 | `disclose:exchange_rate_period_days` | integer | Observation window in days (default: 90) |
-| `disclose:returnless_refund_rate` *(v0.2)* | decimal | Rate of refunds issued without requiring the buyer to return the item (0–1). A higher rate signals merchant confidence in product quality and low unit economics on returns. |
-| `disclose:returnless_refund_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
-| `disclose:return_reason_top_category` *(v0.2)* | string | The most frequently cited return reason category within the observation window. Recommended values: `sizing`, `defective`, `not_as_described`, `changed_mind`, `arrived_late`, `other`. |
-| `disclose:international_return_supported` *(v0.2)* | boolean | Whether the merchant supports returns from buyers outside the merchant's primary operating country. |
+| `disclose:returnless_refund_rate` | decimal | Rate of refunds issued without requiring the buyer to return the item (0–1). A higher rate signals merchant confidence in product quality and low unit economics on returns. |
+| `disclose:returnless_refund_rate_period_days` | integer | Observation window in days (default: 90) |
+| `disclose:return_reason_top_category` | string | The most frequently cited return reason category within the observation window. Recommended values: `sizing`, `defective`, `not_as_described`, `changed_mind`, `arrived_late`, `other`. |
+| `disclose:international_return_supported` | boolean | Whether the merchant supports returns from buyers outside the merchant's primary operating country. |
 
 ---
 
@@ -207,9 +293,9 @@ Operational signals covering the merchant's warehouse-side fulfillment performan
 | `disclose:on_time_shipment_rate_period_days` | integer | Observation window in days (default: 90) |
 | `disclose:shipment_delay_median_hours` | decimal | Median hours by which late shipments missed the promised fulfillment window |
 | `disclose:shipment_delay_p90_hours` | decimal | 90th percentile hours by which late shipments missed the promised fulfillment window |
-| `disclose:same_day_fulfillment_rate` *(v0.2)* | decimal | Rate of orders shipped on the same calendar day as placement, for orders placed before the merchant's same-day cutoff time (0–1). |
-| `disclose:same_day_fulfillment_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
-| `disclose:fulfillment_location_count` *(v0.2)* | integer | Number of distinct warehouse or fulfillment locations the merchant ships from. A higher count signals distributed inventory and reduced average transit distance. |
+| `disclose:same_day_fulfillment_rate` | decimal | Rate of orders shipped on the same calendar day as placement, for orders placed before the merchant's same-day cutoff time (0–1). |
+| `disclose:same_day_fulfillment_rate_period_days` | integer | Observation window in days (default: 90) |
+| `disclose:fulfillment_location_count` | integer | Number of distinct warehouse or fulfillment locations the merchant ships from. A higher count signals distributed inventory and reduced average transit distance. |
 
 #### Order Accuracy
 
@@ -219,12 +305,12 @@ Operational signals covering the merchant's warehouse-side fulfillment performan
 | `disclose:order_accuracy_rate_period_days` | integer | Observation window in days (default: 90) |
 | `disclose:incorrect_item_rate` | decimal | Rate of orders containing a wrong item (0–1) |
 | `disclose:damaged_item_rate` | decimal | Rate of orders containing a damaged item at delivery (0–1) |
-| `disclose:carrier_on_time_delivery_rate` *(v0.2)* | decimal | Rate of shipments delivered on time per the carrier's own estimated delivery date (0–1). Distinguishes merchant-side fulfillment delays from carrier-side delivery delays. |
-| `disclose:carrier_on_time_delivery_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
+| `disclose:carrier_on_time_delivery_rate` | decimal | Rate of shipments delivered on time per the carrier's own estimated delivery date (0–1). Distinguishes merchant-side fulfillment delays from carrier-side delivery delays. |
+| `disclose:carrier_on_time_delivery_rate_period_days` | integer | Observation window in days (default: 90) |
 
 ---
 
-### 4. Inventory & Availability *(new in v0.2)*
+### 4. Inventory & Availability
 
 Signals about whether products are actually available when an agent attempts to purchase. Inventory failures are a critical agentic commerce failure mode — an agent that recommends an out-of-stock product, or places an order against inaccurate inventory, has failed the buyer regardless of all other merchant quality signals.
 
@@ -243,7 +329,7 @@ Signals about whether products are actually available when an agent attempts to 
 
 ---
 
-### 5. Shipping & Delivery Experience *(new in v0.2)*
+### 5. Shipping & Delivery Experience
 
 Post-handoff signals covering what the buyer actually experiences after an order leaves the merchant's facility. Distinct from Fulfillment, which measures warehouse-side operations. These signals require carrier tracking data and are natural attestation targets for post-purchase platforms such as Narvar and AfterShip.
 
@@ -269,11 +355,11 @@ Signals about transaction integrity and payment reliability. Agents handling aut
 |-----------|------|-------------|
 | `disclose:chargeback_rate` | decimal | Chargebacks as a proportion of total transactions (0–1) |
 | `disclose:chargeback_rate_period_days` | integer | Observation window in days (default: 90) |
-| `disclose:dispute_win_rate` *(v0.2)* | decimal | Rate of disputed transactions resolved in the merchant's favour (0–1). Provides context for chargeback rate: a merchant with low chargebacks and a high dispute win rate has a materially stronger financial risk profile. |
-| `disclose:dispute_win_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
-| `disclose:fraud_order_rate` *(v0.2)* | decimal | Rate of orders identified as fraudulent and cancelled prior to fulfillment (0–1). Signals the merchant's fraud detection maturity and platform security posture. |
-| `disclose:fraud_order_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
-| `disclose:payment_method_coverage` *(v0.2)* | array of strings | Payment methods accepted by the merchant. Recommended values: `card`, `paypal`, `apple_pay`, `google_pay`, `shop_pay`, `buy_now_pay_later`, `crypto`, `bank_transfer`. |
+| `disclose:dispute_win_rate` | decimal | Rate of disputed transactions resolved in the merchant's favour (0–1). Provides context for chargeback rate: a merchant with low chargebacks and a high dispute win rate has a materially stronger financial risk profile. |
+| `disclose:dispute_win_rate_period_days` | integer | Observation window in days (default: 90) |
+| `disclose:fraud_order_rate` | decimal | Rate of orders identified as fraudulent and cancelled prior to fulfillment (0–1). Signals the merchant's fraud detection maturity and platform security posture. |
+| `disclose:fraud_order_rate_period_days` | integer | Observation window in days (default: 90) |
+| `disclose:payment_method_coverage` | array of strings | Payment methods accepted by the merchant. Recommended values: `card`, `paypal`, `apple_pay`, `google_pay`, `shop_pay`, `buy_now_pay_later`, `crypto`, `bank_transfer`. |
 
 ---
 
@@ -285,10 +371,10 @@ Signals about the quality, speed, and accessibility of the merchant's customer s
 |-----------|------|-------------|
 | `disclose:support_resolution_time_median_hours` | decimal | Median hours from support contact initiation to issue resolution |
 | `disclose:support_resolution_time_p90_hours` | decimal | 90th percentile hours from support contact to resolution |
-| `disclose:support_channel_availability` *(v0.2)* | array of strings | Support channels available to buyers. Recommended values: `live_chat`, `email`, `phone`, `sms`, `social`, `self_serve`. |
-| `disclose:support_hours_coverage` *(v0.2)* | string | Hours during which live support is available. Recommended values: `24_7`, `business_hours`, `extended_hours`, `async_only`. |
-| `disclose:first_contact_resolution_rate` *(v0.2)* | decimal | Rate of support contacts resolved without requiring a follow-up interaction (0–1). A strong signal of support quality and operational maturity. |
-| `disclose:first_contact_resolution_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
+| `disclose:support_channel_availability` | array of strings | Support channels available to buyers. Recommended values: `live_chat`, `email`, `phone`, `sms`, `social`, `self_serve`. |
+| `disclose:support_hours_coverage` | string | Hours during which live support is available. Recommended values: `24_7`, `business_hours`, `extended_hours`, `async_only`. |
+| `disclose:first_contact_resolution_rate` | decimal | Rate of support contacts resolved without requiring a follow-up interaction (0–1). A strong signal of support quality and operational maturity. |
+| `disclose:first_contact_resolution_rate_period_days` | integer | Observation window in days (default: 90) |
 
 ---
 
@@ -301,11 +387,11 @@ Signals about pricing integrity and buyer behaviour. These attributes help agent
 | `disclose:average_discount_rate` | decimal | Average discount applied across completed transactions as a proportion of list price (0–1) |
 | `disclose:average_discount_rate_period_days` | integer | Observation window in days (default: 90) |
 | `disclose:search_to_conversion_rate` | decimal | Rate of product page visits that result in a completed purchase (0–1). Signals demand authenticity and product-market fit. |
-| `disclose:price_stability_rate` *(v0.2)* | decimal | Rate of active SKUs whose listed price did not change during the observation window (0–1). A low rate may indicate dynamic or promotional pricing practices that affect the reliability of displayed prices. |
-| `disclose:price_stability_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
-| `disclose:dynamic_pricing_used` *(v0.2)* | boolean | Whether the merchant uses algorithmic or demand-based dynamic pricing. Agents SHOULD surface this to buyers when the purchase context is price-sensitive. |
-| `disclose:promotional_frequency_rate` *(v0.2)* | decimal | Proportion of days within the observation window on which at least one active site-wide or category-level promotion was running (0–1). A rate approaching 1.0 is a discount theater signal. |
-| `disclose:promotional_frequency_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 90) |
+| `disclose:price_stability_rate` | decimal | Rate of active SKUs whose listed price did not change during the observation window (0–1). A low rate may indicate dynamic or promotional pricing practices that affect the reliability of displayed prices. |
+| `disclose:price_stability_rate_period_days` | integer | Observation window in days (default: 90) |
+| `disclose:dynamic_pricing_used` | boolean | Whether the merchant uses algorithmic or demand-based dynamic pricing. Agents SHOULD surface this to buyers when the purchase context is price-sensitive. |
+| `disclose:promotional_frequency_rate` | decimal | Proportion of days within the observation window on which at least one active site-wide or category-level promotion was running (0–1). A rate approaching 1.0 is a discount theater signal. |
+| `disclose:promotional_frequency_rate_period_days` | integer | Observation window in days (default: 90) |
 
 ---
 
@@ -320,8 +406,8 @@ Signals relevant to subscription products. These attributes apply only to mercha
 | `disclose:subscription_cancel_online` | boolean | Whether subscriptions can be cancelled without contacting support |
 | `disclose:subscription_pause_available` | boolean | Whether subscriptions can be paused without cancelling |
 | `disclose:subscription_trial_days` | integer | Free trial duration in days, if offered. Omit if no trial is available. |
-| `disclose:subscription_price_change_notice_days` *(v0.2)* | integer | Minimum number of days notice the merchant provides to subscribers before a price increase takes effect. |
-| `disclose:subscription_skip_available` *(v0.2)* | boolean | Whether subscribers can skip an individual delivery without pausing or cancelling the subscription. |
+| `disclose:subscription_price_change_notice_days` | integer | Minimum number of days notice the merchant provides to subscribers before a price increase takes effect. |
+| `disclose:subscription_skip_available` | boolean | Whether subscribers can skip an individual delivery without pausing or cancelling the subscription. |
 
 ---
 
@@ -334,14 +420,14 @@ Certification-based signals about the merchant's environmental and ethical pract
 | `disclose:sustainability_certified` | boolean | Whether the merchant holds a recognized sustainability certification |
 | `disclose:sustainability_certifier` | string | Name of the certifying body (e.g., `B Corp`, `1% for the Planet`) |
 | `disclose:ethical_sourcing_certified` | boolean | Whether the merchant holds a recognized ethical sourcing certification |
-| `disclose:carbon_neutral_certified` *(v0.2)* | boolean | Whether the merchant holds a recognized carbon neutral certification, distinct from general sustainability accreditation. |
-| `disclose:carbon_neutral_certifier` *(v0.2)* | string | Name of the carbon neutral certifying body (e.g., `Climate Neutral`, `Carbon Trust`) |
-| `disclose:living_wage_certified` *(v0.2)* | boolean | Whether the merchant holds a recognized living wage certification for their workforce. |
-| `disclose:country_of_manufacture` *(v0.2)* | string or array | ISO 3166-1 alpha-2 country code(s) where the merchant's products are manufactured. Relevant for ethical sourcing context and geopolitical supply chain risk assessment. |
+| `disclose:carbon_neutral_certified` | boolean | Whether the merchant holds a recognized carbon neutral certification, distinct from general sustainability accreditation. |
+| `disclose:carbon_neutral_certifier` | string | Name of the carbon neutral certifying body (e.g., `Climate Neutral`, `Carbon Trust`) |
+| `disclose:living_wage_certified` | boolean | Whether the merchant holds a recognized living wage certification for their workforce. |
+| `disclose:country_of_manufacture` | string or array | ISO 3166-1 alpha-2 country code(s) where the merchant's products are manufactured. Relevant for ethical sourcing context and geopolitical supply chain risk assessment. |
 
 ---
 
-### 11. Identity & Legitimacy *(new in v0.2)*
+### 11. Identity & Legitimacy
 
 Signals that help agents distinguish legitimate merchants from fraudulent storefronts, impersonation attempts, and fly-by-night operators. This is the category most resistant to gaming: the signals are grounded in external registries — business registration databases, domain history, trademark records — rather than behavioral data the merchant controls. As agentic commerce scales, counterfeit merchant risk becomes a material threat vector that no existing trust signal framework addresses.
 
@@ -370,10 +456,10 @@ Signals derived from buyer reviews and ratings. These differ from operational me
 | `disclose:review_verified_purchase_rate` | decimal | Proportion of reviews attributed to verified purchases (0–1). The most manipulation-resistant of the review signals. |
 | `disclose:review_recency_90d_rate` | decimal | Proportion of total reviews submitted within the last 90 days (0–1). Signals active and ongoing customer engagement. |
 | `disclose:review_recency_365d_rate` | decimal | Proportion of total reviews submitted within the last 365 days (0–1). Provides a longer-horizon view of review activity relative to lifetime review volume. |
-| `disclose:review_platform` *(v0.2)* | string | The platform from which review data is derived. Recommended values: `own_site`, `google`, `trustpilot`, `yotpo`, `okendo`, `judge_me`, `other`. Agents SHOULD weight reviews from independent platforms higher than merchant-hosted reviews. |
-| `disclose:review_response_rate` *(v0.2)* | decimal | Rate of reviews to which the merchant has posted a public response (0–1). Signals active merchant engagement with buyer feedback. |
-| `disclose:review_response_rate_period_days` *(v0.2)* | integer | Observation window in days (default: 365) |
-| `disclose:negative_review_rate` *(v0.2)* | decimal | Proportion of total reviews rated 2 stars or below (0–1). More granular than aggregate rating alone. |
+| `disclose:review_platform` | string | The platform from which review data is derived. Recommended values: `own_site`, `google`, `trustpilot`, `yotpo`, `okendo`, `judge_me`, `other`. Agents SHOULD weight reviews from independent platforms higher than merchant-hosted reviews. |
+| `disclose:review_response_rate` | decimal | Rate of reviews to which the merchant has posted a public response (0–1). Signals active merchant engagement with buyer feedback. |
+| `disclose:review_response_rate_period_days` | integer | Observation window in days (default: 365) |
+| `disclose:negative_review_rate` | decimal | Proportion of total reviews rated 2 stars or below (0–1). More granular than aggregate rating alone. |
 
 ---
 
@@ -472,7 +558,7 @@ Agents SHOULD cache this registry and refresh it periodically. Agents MUST valid
 
 ### Verifier Benchmarks
 
-Verifiers accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. Verifier benchmarks are out of scope for v0.2 of this specification. However, the field `disclose:benchmark_ref` is reserved in the attribute namespace for future use.
+Verifiers accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. Verifier benchmarks are out of scope for this version of this specification. However, the field `disclose:benchmark_ref` is reserved in the attribute namespace for future use.
 
 ---
 
@@ -652,9 +738,11 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose` |
 | Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
 | Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate |
-| Merchant | The entity selling goods or services, who publishes disclosure data under their own domain |
+| Item | The product or service being transacted. Maps to `schema:ItemOffered`, the schema.org parent type that encompasses both physical goods (`schema:Product`) and services (`schema:Service`). Signals published at Item scope reflect attributes intrinsic to the item itself — such as manufacturer warranty terms, safety recall status, or authorized reseller eligibility — independent of any specific Merchant or Offer. Using `schema:ItemOffered` as the base type ensures the framework applies equally to physical goods, home services, B2B, and digital products. |
+| Merchant | The seller or service provider publishing disclosure signals. Maps to `schema:Organization`. Signals published at Merchant scope reflect aggregate operational performance across all of the merchant's transactions — for example, overall return rate or average fulfillment time. Merchant-scope signals establish baseline seller confidence independent of any specific Item or Offer. The term "Merchant" is used throughout this specification in preference to "Organization" to signal commerce intent and to remain consistent with the concept of Merchant of Record. One of three disclosure scopes; see [Disclosure Scopes](#disclosure-scopes). |
 | Merchant Sovereignty | The principle that merchants retain full control over what they disclose, to whom, and when |
 | Observation Window | The time period over which a metric is computed, declared via a companion `_period_days` attribute |
+| Offer | The intersection of a specific Merchant and a specific Item — this seller, selling this item, under these conditions. Maps to `schema:Offer`. Signals published at Offer scope reflect how a particular Merchant performs on a particular Item: for example, the return rate for this SKU at this seller, or the inventory accuracy rate for this item. Offer-scope signals are the most precise unit of disclosure in the framework, and are the primary data layer an agent uses when comparing the same Item across multiple Merchants. Because Offers are inherently transient — prices and availability change — agents should treat Offer-scope signals as time-sensitive and respect the `attested_at` timestamp in any covering attestation. One of three disclosure scopes; see [Disclosure Scopes](#disclosure-scopes). |
 | Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time |
 | Review Recency | The proportion of a merchant's total reviews submitted within a recent time window (90 or 365 days), used to assess the freshness of aggregate review ratings |
 | Selective Disclosure | The ability to disclose specific attributes without an all-or-nothing requirement |
