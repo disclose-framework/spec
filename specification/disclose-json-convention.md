@@ -1,5 +1,5 @@
 # The `disclose.json` Convention
-### A Standard File Location for Merchant Trust Signals
+### A Standard File Location for Merchant Signals
 **Disclose Framework — Convention Specification v0.1**
 
 ---
