@@ -87,7 +87,7 @@ A minimal disclosure document looks like this:
 }
 ```
 
-Publish this at `/.well-known/disclose` on your domain. That's a valid Disclose implementation.
+Publish this at `/.well-known/disclose.json` on your domain. That's a valid Disclose implementation.
 
 ---
 
