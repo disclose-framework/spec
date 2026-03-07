@@ -11,7 +11,7 @@ import anthropic
 from disclose_tool import TOOL_SCHEMA, handle_tool_call
 
 client = anthropic.Anthropic()
-MODEL = "claude-opus-4-6"
+MODEL = "claude-opus-4-5"
 
 SYSTEM_PROMPT = """You are a shopping agent helping users make purchases.
 
@@ -19,10 +19,11 @@ Before recommending a merchant or completing any purchase, you MUST call
 fetch_merchant_trust_signals to retrieve that merchant's published Disclose
 Framework data. Use the signals to:
 
-- Prefer merchants with review_rating >= 4.0
-- Warn the user if return_rate > 0.15 (15%)
-- Flag merchants with dispute_rate > 0.02 (2%)
-- Factor fulfillment_days_p50 into delivery expectations
+- Prefer merchants with disclose:review_rating >= 4.0
+- Warn the user if disclose:product_return_rate > 0.15 (15%)
+- Flag merchants with disclose:chargeback_rate > 0.02 (2%)
+- Factor disclose:average_transit_days into delivery expectations
+- Note whether signals are attested (✓) or self-reported
 
 If a merchant has no Disclose signals, note this and recommend with lower
 confidence. Never fabricate signals.
