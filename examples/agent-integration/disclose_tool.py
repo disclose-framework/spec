@@ -4,8 +4,9 @@ disclose_tool.py
 Reference implementation of a `fetch_merchant_trust_signals` tool
 for AI agent frameworks (LangChain, AutoGen, custom Claude agents).
 
-Fetches and parses Disclose Framework JSON-LD from a merchant's
-well-known endpoint, returning structured signals an LLM can reason over.
+Fetches and parses a Disclose Framework disclosure document from a
+merchant's well-known endpoint, returning structured signals an LLM
+can reason over.
 
 Usage with LangChain:
     from disclose_tool import DiscloseSignalsTool
@@ -28,11 +29,11 @@ from typing import Optional
 TOOL_SCHEMA = {
     "name": "fetch_merchant_trust_signals",
     "description": (
-        "Fetches machine-readable trust signals published by a merchant "
+        "Fetches machine-readable disclosure signals published by a merchant "
         "using the Disclose Framework (discloseframework.dev). "
-        "Returns verified data on return rates, fulfillment time, review "
-        "ratings, and dispute rates. Use this before recommending a merchant "
-        "or completing a purchase on a user's behalf."
+        "Returns verified data on return rates, fulfillment performance, "
+        "review signals, chargeback rates, and more. Use this before "
+        "recommending a merchant or completing a purchase on a user's behalf."
     ),
     "input_schema": {
         "type": "object",
@@ -41,7 +42,8 @@ TOOL_SCHEMA = {
                 "type": "string",
                 "description": (
                     "The merchant's root domain, e.g. 'acme.com'. "
-                    "The tool will look up /.well-known/disclose.json automatically."
+                    "The tool will check /.well-known/disclose.json first, "
+                    "falling back to /disclose.json at the domain root."
                 ),
             },
             "signals": {
@@ -49,7 +51,7 @@ TOOL_SCHEMA = {
                 "items": {"type": "string"},
                 "description": (
                     "Optional list of specific signal keys to retrieve, e.g. "
-                    "['disclose:return_rate', 'disclose:review_rating']. "
+                    "['disclose:product_return_rate', 'disclose:review_rating']. "
                     "If omitted, all available signals are returned."
                 ),
             },
@@ -64,6 +66,7 @@ TOOL_SCHEMA = {
 # ---------------------------------------------------------------------------
 
 WELL_KNOWN_PATH = "/.well-known/disclose.json"
+FALLBACK_PATH = "/disclose.json"
 TIMEOUT_SECONDS = 5
 
 
@@ -73,10 +76,21 @@ class DiscloseSignals:
 
     merchant_domain: str
     raw: dict = field(repr=False)
-    signals: dict = field(default_factory=dict)
-    verifier: Optional[str] = None
-    verified_at: Optional[str] = None
+    attributes: dict = field(default_factory=dict)
+    attestations: list = field(default_factory=list)
     error: Optional[str] = None
+
+    def attested_by(self) -> list[str]:
+        """Returns list of verifier names who have attested signals."""
+        return [a.get("verifier_name", a.get("verifier_id", "Unknown"))
+                for a in self.attestations]
+
+    def is_attested(self, attribute_key: str) -> bool:
+        """Returns True if the attribute has at least one valid attestation."""
+        for attestation in self.attestations:
+            if attribute_key in attestation.get("attested_attributes", []):
+                return True
+        return False
 
     def summary(self) -> str:
         """Human/LLM-readable summary of signals for prompt injection."""
@@ -84,13 +98,22 @@ class DiscloseSignals:
             return f"[Disclose] Could not retrieve signals for {self.merchant_domain}: {self.error}"
 
         lines = [f"[Disclose signals for {self.merchant_domain}]"]
-        if self.verifier:
-            lines.append(f"  Verified by: {self.verifier} at {self.verified_at or 'unknown time'}")
-        for key, value in self.signals.items():
+
+        verifiers = self.attested_by()
+        if verifiers:
+            lines.append(f"  Attested by: {', '.join(verifiers)}")
+
+        for key, value in self.attributes.items():
+            # Skip _period_days companion fields from summary display
+            if key.endswith("_period_days"):
+                continue
             short_key = key.replace("disclose:", "")
-            lines.append(f"  {short_key}: {_format_value(short_key, value)}")
-        if not self.signals:
+            attested = " ✓" if self.is_attested(key) else ""
+            lines.append(f"  {short_key}: {_format_value(short_key, value)}{attested}")
+
+        if not self.attributes:
             lines.append("  No signals published.")
+
         return "\n".join(lines)
 
     def score(self) -> Optional[float]:
@@ -101,15 +124,16 @@ class DiscloseSignals:
         Returns None if insufficient data.
         """
         weights = {
-            "disclose:review_rating": (5.0, 0.35),   # (max_value, weight)
-            "disclose:return_rate":   (1.0, -0.25),  # negative: lower is better
-            "disclose:dispute_rate":  (1.0, -0.20),  # negative
-            "disclose:fulfillment_days_p50": (30.0, -0.20),  # negative
+            # (max_value, weight) — negative weight means lower is better
+            "disclose:review_rating":        (5.0,   0.35),
+            "disclose:product_return_rate":  (1.0,  -0.25),
+            "disclose:chargeback_rate":      (1.0,  -0.20),
+            "disclose:on_time_shipment_rate": (1.0,  0.20),
         }
         score = 0.0
         total_weight = 0.0
         for key, (max_val, w) in weights.items():
-            val = self.signals.get(key)
+            val = self.attributes.get(key)
             if val is None:
                 continue
             normalized = float(val) / max_val
@@ -128,82 +152,111 @@ def fetch_signals(
     signals: Optional[list[str]] = None,
 ) -> DiscloseSignals:
     """
-    Fetches Disclose signals from a merchant's well-known endpoint.
+    Fetches Disclose signals from a merchant's disclosure endpoint.
+    Checks /.well-known/disclose.json first, falls back to /disclose.json.
 
     Args:
         merchant_domain: Root domain of the merchant (e.g. 'acme.com').
-        signals: Optional list of signal keys to filter to.
+        signals: Optional list of attribute keys to filter to.
 
     Returns:
         DiscloseSignals dataclass with parsed data.
     """
     domain = merchant_domain.rstrip("/").removeprefix("https://").removeprefix("http://")
-    url = f"https://{domain}{WELL_KNOWN_PATH}"
 
-    try:
-        req = urllib.request.Request(
-            url,
-            headers={
-                "Accept": "application/ld+json, application/json",
-                "User-Agent": "DiscloseFrameworkAgent/0.1 (+https://discloseframework.dev)",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
-            raw = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
+    raw = None
+    last_error = None
+
+    for path in [WELL_KNOWN_PATH, FALLBACK_PATH]:
+        url = f"https://{domain}{path}"
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": "DiscloseFrameworkAgent/0.2 (+https://discloseframework.dev)",
+                },
+            )
+            with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as resp:
+                raw = json.loads(resp.read().decode())
+            break  # Success — stop trying paths
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                last_error = f"HTTP 404 at {path}"
+                continue  # Try fallback path
+            return DiscloseSignals(
+                merchant_domain=domain, raw={},
+                error=f"HTTP {e.code}: merchant may not support Disclose Framework"
+            )
+        except urllib.error.URLError as e:
+            return DiscloseSignals(merchant_domain=domain, raw={}, error=str(e.reason))
+        except json.JSONDecodeError:
+            return DiscloseSignals(merchant_domain=domain, raw={}, error="Invalid JSON at endpoint")
+        except Exception as e:
+            return DiscloseSignals(merchant_domain=domain, raw={}, error=str(e))
+
+    if raw is None:
         return DiscloseSignals(
             merchant_domain=domain, raw={},
-            error=f"HTTP {e.code}: merchant may not support Disclose Framework"
+            error=last_error or "Disclosure document not found at canonical or fallback path"
         )
-    except urllib.error.URLError as e:
-        return DiscloseSignals(merchant_domain=domain, raw={}, error=str(e.reason))
-    except json.JSONDecodeError:
-        return DiscloseSignals(merchant_domain=domain, raw={}, error="Invalid JSON at endpoint")
-    except Exception as e:
-        return DiscloseSignals(merchant_domain=domain, raw={}, error=str(e))
 
-    # Parse signals — support both flat namespace and nested @graph format
-    all_signals = _extract_signals(raw)
+    # Extract attributes from the flat disclose: namespace
+    all_attributes = _extract_attributes(raw)
 
     filtered = (
-        {k: v for k, v in all_signals.items() if k in signals}
-        if signals else all_signals
+        {k: v for k, v in all_attributes.items() if k in signals}
+        if signals else all_attributes
     )
 
     return DiscloseSignals(
         merchant_domain=domain,
         raw=raw,
-        signals=filtered,
-        verifier=raw.get("disclose:verifier", {}).get("@id") or raw.get("disclose:verifier"),
-        verified_at=raw.get("disclose:verified_at"),
+        attributes=filtered,
+        attestations=raw.get("attestations", []),
     )
 
 
-def _extract_signals(raw: dict) -> dict:
-    """Extract disclose: namespaced keys from raw JSON-LD."""
-    signals = {}
-    # Direct namespace keys at root
-    for k, v in raw.items():
+def _extract_attributes(raw: dict) -> dict:
+    """Extract disclose: namespaced keys from a v0.2 disclosure document."""
+    attributes = {}
+
+    # v0.2 flat attributes object
+    for k, v in raw.get("attributes", {}).items():
         if k.startswith("disclose:"):
-            signals[k] = v
-    # Nested under @graph
+            attributes[k] = v
+
+    # Also support bare disclose: keys at root (JSON-LD format)
+    for k, v in raw.items():
+        if k.startswith("disclose:") and k not in attributes:
+            attributes[k] = v
+
+    # Support @graph nodes (JSON-LD multi-scope documents)
     for node in raw.get("@graph", []):
         if isinstance(node, dict):
             for k, v in node.items():
-                if k.startswith("disclose:"):
-                    signals[k] = v
-    return signals
+                if k.startswith("disclose:") and k not in attributes:
+                    attributes[k] = v
+
+    return attributes
 
 
 def _format_value(key: str, value) -> str:
-    if key == "return_rate":
+    """Format attribute values for human-readable summary output."""
+    rate_keys = {
+        "product_return_rate", "chargeback_rate", "dispute_win_rate",
+        "on_time_shipment_rate", "delivered_on_time_rate", "order_accuracy_rate",
+        "in_stock_rate", "inventory_accuracy_rate", "review_verified_purchase_rate",
+        "first_contact_resolution_rate", "returnless_refund_rate",
+    }
+    if key in rate_keys:
         return f"{float(value)*100:.1f}%"
-    if key == "dispute_rate":
-        return f"{float(value)*100:.2f}%"
     if key == "review_rating":
         return f"{value}/5.0"
     if "days" in key:
         return f"{value} days"
+    if "hours" in key:
+        return f"{value} hrs"
     return str(value)
 
 
@@ -217,7 +270,7 @@ try:
 
     class _DiscloseInput(BaseModel):
         merchant_domain: str = PydanticField(..., description="Root domain of the merchant")
-        signals: Optional[list[str]] = PydanticField(None, description="Signal keys to filter")
+        signals: Optional[list[str]] = PydanticField(None, description="Attribute keys to filter")
 
     class DiscloseSignalsTool(BaseTool):
         name = "fetch_merchant_trust_signals"
@@ -270,4 +323,4 @@ if __name__ == "__main__":
     print(result.summary())
     score = result.score()
     if score is not None:
-        print(f"\n  Composite trust score: {score} / 1.0")
+        print(f"\n  Composite score: {score} / 1.0")
