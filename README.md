@@ -18,7 +18,7 @@ Today, no standard exists for merchants to publish this data in a way agents can
 
 Disclose defines three participants:
 
-- **Merchants** publish a structured disclosure document at `/.well-known/disclose` on their own domain
+- **Merchants** publish a structured disclosure document at `/.well-known/disclose.json` on their own domain
 - **Verifiers** — authorized third parties with access to source data — cryptographically attest to the accuracy of specific disclosures
 - **Agents** query disclosure documents, verify attestations, and use the signals to inform purchasing decisions
 
