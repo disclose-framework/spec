@@ -127,7 +127,7 @@ An Offer-scoped signal takes precedence over a Merchant-scoped signal for the sa
 
 ### Scope in the Disclosure Document
 
-Offer-scoped and Item-scoped signals are published within the same `/.well-known/disclose` document. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
+Offer-scoped and Item-scoped signals are published within the same `/.well-known/disclose.json` document. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
 
 ```json
 {
@@ -179,14 +179,16 @@ The following attributes are particularly well-suited to Item scope, as they ref
 
 Merchants publish their disclosure document at a well-known URI:
 ```
-/.well-known/disclose
+/.well-known/disclose.json
 ```
 
 This endpoint MUST return a valid JSON document conforming to the Disclose schema. The endpoint SHOULD support HTTP caching via standard `Cache-Control` headers.
 
+Agents SHOULD check `/.well-known/disclose.json` first. For merchants on hosted platforms that do not support the `/.well-known/` directory, `disclose.json` at the domain root is a supported fallback. Agents MUST check the canonical path first and fall back to the root path only if the canonical path returns a 404.
+
 Example request:
 ```
-GET /.well-known/disclose HTTP/1.1
+GET /.well-known/disclose.json HTTP/1.1
 Host: merchant.example.com
 Accept: application/json
 ```
@@ -735,7 +737,7 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Agent | A platform, AI assistant, or automated system that queries Disclose data on behalf of a buyer |
 | Attestation | A cryptographically signed statement from a Verifier confirming that specific disclosed attributes have been independently verified |
 | Benchmark Reference | An optional pointer to a Verifier-published document providing vertical or category-level distributions for disclosed attributes. Reserved for a future extension; see `disclose:benchmark_ref`. |
-| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose` |
+| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose.json` |
 | Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
 | Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate |
 | Item | The product or service being transacted. Maps to `schema:ItemOffered`, the schema.org parent type that encompasses both physical goods (`schema:Product`) and services (`schema:Service`). Signals published at Item scope reflect attributes intrinsic to the item itself — such as manufacturer warranty terms, safety recall status, or authorized reseller eligibility — independent of any specific Merchant or Offer. Using `schema:ItemOffered` as the base type ensures the framework applies equally to physical goods, home services, B2B, and digital products. |
