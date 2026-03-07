@@ -1,191 +1,229 @@
-# The `disclose.json` Convention
-### A Standard File Location for Merchant Signals
-**Disclose Framework — Convention Specification v0.1**
+# Getting Started with Disclose
+
+### Publishing Your First Disclosure Document
+**Disclose Framework — Quick Start Guide**
 
 ---
 
 ## Overview
 
-`disclose.json` is a standardized file that merchants publish at a predictable location on their domain. Any AI agent, MCP server, or automated system can retrieve it without prior knowledge of the merchant's platform, tech stack, or API.
+A Disclose disclosure document is a JSON file merchants publish at a predictable location on their domain. Any AI agent, MCP server, or automated system can retrieve it without prior knowledge of the merchant's platform, tech stack, or API.
 
 It is to AI agents what `robots.txt` is to web crawlers — a known address, a standard format, a voluntary signal.
+
+The full specification is in [`specification/overview.md`](overview.md). This guide covers what you need to publish a valid disclosure document and get discovered.
 
 ---
 
 ## File Location
 
-Merchants publish the file at the root of their domain:
+Publish your disclosure document at:
+
+```
+https://www.merchantname.com/.well-known/disclose.json
+```
+
+This is the canonical path. Agents check here first. No registration or configuration required.
+
+If your hosting platform does not support the `/.well-known/` directory (some hosted storefronts do not), publish at the domain root instead:
 
 ```
 https://www.merchantname.com/disclose.json
 ```
 
-This location is canonical and non-negotiable. Agents check this path. No configuration, discovery, or registration is required.
-
----
-
-## Full Example
-
-```json
-{
-  "@context": "https://discloseframework.dev/schema/v1",
-  "@type": "MerchantDisclosure",
-  "schema_version": "1.0",
-  "issued_at": "2026-03-01T00:00:00Z",
-  "expires_at": "2026-06-01T00:00:00Z",
-  "merchant": {
-    "name": "Example Store",
-    "domain": "examplestore.com",
-    "jurisdiction": "CA"
-  },
-  "signals": {
-    "fulfillment_time_days_median": 2.1,
-    "return_rate_percent": 4.3,
-    "refund_rate_percent": 1.8,
-    "on_time_delivery_rate_percent": 97.2,
-    "customer_satisfaction_score": 4.6,
-    "inventory_accuracy_percent": 99.1
-  },
-  "verifications": [
-    {
-      "signal": "return_rate_percent",
-      "verifier": "Loop Returns",
-      "verifier_url": "https://loopreturns.com",
-      "verified_at": "2026-02-15T00:00:00Z",
-      "method": "platform_data"
-    },
-    {
-      "signal": "fulfillment_time_days_median",
-      "verifier": "Narvar",
-      "verifier_url": "https://narvar.com",
-      "verified_at": "2026-02-15T00:00:00Z",
-      "method": "platform_data"
-    }
-  ],
-  "permitted_use": {
-    "agent_query": true,
-    "real_time_recommendation": true,
-    "aggregation": false,
-    "benchmarking": false,
-    "third_party_republication": false,
-    "commercial_resale": false,
-    "attribution_required": true,
-    "attribution_text": "Data self-disclosed by examplestore.com via Disclose Framework"
-  }
-}
-```
-
----
-
-## Field Reference
-
-### Root Fields
-
-| Field | Required | Description |
-|---|---|---|
-| `@context` | Yes | Points to the Disclose Framework schema |
-| `@type` | Yes | Always `MerchantDisclosure` |
-| `schema_version` | Yes | Version of the spec used |
-| `issued_at` | Yes | When this file was last generated (ISO 8601) |
-| `expires_at` | Recommended | When agents should re-fetch. Prevents stale data use |
-| `merchant` | Yes | Identifying information about the merchant |
-| `signals` | Yes | The performance data being disclosed |
-| `verifications` | Optional | Third-party attestations for specific signals |
-| `permitted_use` | Yes | How agents and platforms may use this data |
-
----
-
-### The `signals` Object
-
-Merchants publish only the signals they choose. All fields are optional. Publishing a subset is valid and encouraged over publishing inaccurate data.
-
-| Signal | Type | Description |
-|---|---|---|
-| `fulfillment_time_days_median` | Float | Median days from order to shipment |
-| `return_rate_percent` | Float | Returns as % of orders over trailing 90 days |
-| `refund_rate_percent` | Float | Refunds as % of orders over trailing 90 days |
-| `on_time_delivery_rate_percent` | Float | % of orders delivered within estimated window |
-| `customer_satisfaction_score` | Float | Verified CSAT score (0–5 scale) |
-| `inventory_accuracy_percent` | Float | % of listed SKUs in stock at time of disclosure |
-
----
-
-### The `permitted_use` Object
-
-This is the merchant's explicit permission layer. Legitimate agents and platforms that implement the Disclose Framework **must** respect these flags. Scrapers may not — but published permissions establish norms, create accountability, and give merchants meaningful control.
-
-| Flag | Type | Description |
-|---|---|---|
-| `agent_query` | Boolean | Agent may query this data for a single purchasing decision |
-| `real_time_recommendation` | Boolean | Agent may use this data to recommend the merchant to a user |
-| `aggregation` | Boolean | Platform may aggregate this data across merchants |
-| `benchmarking` | Boolean | Platform may use this data in vertical benchmarks |
-| `third_party_republication` | Boolean | Third parties may republish this data |
-| `commercial_resale` | Boolean | Third parties may sell this data commercially |
-| `attribution_required` | Boolean | Any use must credit the merchant as the source |
-| `attribution_text` | String | Preferred attribution string if `attribution_required` is true |
-
-**Default stance:** If `permitted_use` is omitted entirely, agents should treat the data as `agent_query: true` only and nothing else.
-
----
-
-## Caching and Freshness
-
-Agents should:
-- Respect the `expires_at` field and re-fetch when stale
-- Not cache beyond 24 hours if `expires_at` is absent
-- Treat a missing or unreachable `disclose.json` as no disclosure, not as failure
+Agents will fall back to the root path if the canonical path returns a 404.
 
 ---
 
 ## Minimal Valid Example
 
-A merchant who only wants to disclose one signal, with no verifications:
+A merchant disclosing a single signal — no attestations required to get started:
 
 ```json
 {
-  "@context": "https://discloseframework.dev/schema/v1",
-  "@type": "MerchantDisclosure",
-  "schema_version": "1.0",
+  "disclose_version": "0.2",
+  "merchant_domain": "merchantname.com",
   "issued_at": "2026-03-01T00:00:00Z",
-  "merchant": {
-    "name": "Small Shop Co",
-    "domain": "smallshop.co"
-  },
-  "signals": {
-    "fulfillment_time_days_median": 1.5
-  },
-  "permitted_use": {
-    "agent_query": true,
-    "aggregation": false,
-    "commercial_resale": false,
-    "attribution_required": true,
-    "attribution_text": "Data self-disclosed by smallshop.co via Disclose Framework"
+  "expires_at": "2026-06-01T00:00:00Z",
+  "attributes": {
+    "disclose:on_time_shipment_rate": 0.97,
+    "disclose:on_time_shipment_rate_period_days": 90
   }
+}
+```
+
+That's a valid Disclose implementation. Publish it and any agent that knows the convention can find it.
+
+---
+
+## Full Example with Attestations
+
+A merchant with verified signals from Loop Returns and Narvar:
+
+```json
+{
+  "disclose_version": "0.2",
+  "merchant_domain": "merchantname.com",
+  "issued_at": "2026-03-01T00:00:00Z",
+  "expires_at": "2026-06-01T00:00:00Z",
+  "attributes": {
+    "disclose:repeat_purchase_rate": 0.38,
+    "disclose:repeat_purchase_rate_period_days": 90,
+    "disclose:product_return_rate": 0.06,
+    "disclose:product_return_rate_period_days": 90,
+    "disclose:return_policy_type": "free",
+    "disclose:return_window_days": 30,
+    "disclose:on_time_shipment_rate": 0.97,
+    "disclose:on_time_shipment_rate_period_days": 90,
+    "disclose:delivered_on_time_rate": 0.94,
+    "disclose:delivered_on_time_rate_period_days": 90,
+    "disclose:chargeback_rate": 0.003,
+    "disclose:chargeback_rate_period_days": 90,
+    "disclose:review_rating": 4.7,
+    "disclose:review_count": 14200,
+    "disclose:review_verified_purchase_rate": 0.91
+  },
+  "attestations": [
+    {
+      "verifier_id": "loop-returns.com",
+      "verifier_name": "Loop Returns",
+      "attested_attributes": [
+        "disclose:product_return_rate",
+        "disclose:product_return_rate_period_days",
+        "disclose:return_policy_type",
+        "disclose:return_window_days"
+      ],
+      "attested_at": "2026-02-15T00:00:00Z",
+      "expires_at": "2026-08-15T00:00:00Z",
+      "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+      "signing_key_id": "loop-2026"
+    },
+    {
+      "verifier_id": "narvar.com",
+      "verifier_name": "Narvar",
+      "attested_attributes": [
+        "disclose:on_time_shipment_rate",
+        "disclose:on_time_shipment_rate_period_days",
+        "disclose:delivered_on_time_rate",
+        "disclose:delivered_on_time_rate_period_days"
+      ],
+      "attested_at": "2026-02-15T00:00:00Z",
+      "expires_at": "2026-08-15T00:00:00Z",
+      "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
+      "signing_key_id": "narvar-2026"
+    }
+  ]
 }
 ```
 
 ---
 
-## Relationship to JSON-LD Schema Markup
+## Top-Level Fields
 
-`disclose.json` is the **standalone file convention**. Merchants may also embed Disclose signals as JSON-LD in their page `<head>` for agents that parse HTML. The two approaches are complementary:
-
-- **`disclose.json`** — for agents that query the file directly (MCP servers, GPT Actions, LangChain tools)
-- **JSON-LD in `<head>`** — for agents that browse and parse pages (browser agents, crawlers)
-
-Both use the same schema. Merchants implementing both get maximum coverage.
+| Field | Required | Description |
+|---|---|---|
+| `disclose_version` | Yes | Spec version. Use `"0.2"` |
+| `merchant_domain` | Yes | Your canonical domain. Must match the domain serving the file |
+| `issued_at` | Yes | When this document was generated (RFC 3339) |
+| `expires_at` | Recommended | When agents should re-fetch. Set 90 days out |
+| `attributes` | Yes | Flat key-value map of your disclosed signals |
+| `attestations` | Optional | Cryptographically signed verifications from authorized third parties |
 
 ---
 
-## Implementation Checklist for Merchants
+## Choosing What to Disclose
 
-- [ ] Create `disclose.json` using the schema above
-- [ ] Choose which signals to publish (start with one if needed)
-- [ ] Set `permitted_use` flags explicitly
-- [ ] Host the file at `yourdomain.com/disclose.json`
-- [ ] Set `expires_at` 90 days out and update on a regular cadence
-- [ ] Optionally add JSON-LD to your homepage `<head>` for browser agents
+All attributes are optional. Publish what you have clean data for. A single accurate signal is better than ten inaccurate ones.
+
+Good starting signals for most merchants:
+
+| Signal | What it tells agents |
+|---|---|
+| `disclose:on_time_shipment_rate` | Whether orders leave on time |
+| `disclose:product_return_rate` | How often buyers return products |
+| `disclose:delivered_on_time_rate` | Whether buyers receive orders when promised |
+| `disclose:chargeback_rate` | Financial risk profile |
+| `disclose:review_rating` + `disclose:review_verified_purchase_rate` | Review quality signal |
+
+Every time-bounded metric requires a companion `_period_days` field declaring the observation window. The default is 90 days.
+
+The full attribute reference — 61 signals across 12 categories — is in [`specification/overview.md`](overview.md).
+
+---
+
+## Attested vs. Self-Reported Signals
+
+Agents treat attested and self-reported signals differently.
+
+**Self-reported:** You publish the attribute with no attestation. Agents surface it as merchant-reported and weight it accordingly. Valid and useful — better than nothing.
+
+**Attested:** An authorized Verifier with direct data access cryptographically signs the attribute. Agents surface it as independently verified. Significantly stronger signal.
+
+Attestations come from Verifiers listed in the [Disclose Verifier Registry](https://discloseframework.dev/registry/verifiers.json). If you use Loop Returns, Narvar, AfterShip, or Recharge, ask them about Disclose attestation support.
+
+---
+
+## Permitted Use
+
+The `permitted_use` object is an optional permission layer that tells agents and platforms how they may use your data.
+
+```json
+"permitted_use": {
+  "agent_query": true,
+  "real_time_recommendation": true,
+  "aggregation": false,
+  "benchmarking": false,
+  "third_party_republication": false,
+  "commercial_resale": false,
+  "attribution_required": true,
+  "attribution_text": "Data self-disclosed by merchantname.com via Disclose Framework"
+}
+```
+
+If `permitted_use` is omitted, agents treat the data as `agent_query: true` only.
+
+---
+
+## Caching and Freshness
+
+- Set `expires_at` 90 days from `issued_at` and regenerate on a regular cadence
+- Agents will re-fetch when the document expires
+- A missing or unreachable file is treated as no disclosure — not as an error
+
+---
+
+## JSON-LD in Storefront Head
+
+For agents that browse pages rather than querying files directly, you can also embed Disclose signals as JSON-LD in your storefront `<head>`:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "disclose": "https://discloseframework.dev/vocab#"
+  },
+  "@type": "Organization",
+  "disclose:product_return_rate": 0.06,
+  "disclose:product_return_rate_period_days": 90,
+  "disclose:on_time_shipment_rate": 0.97,
+  "disclose:on_time_shipment_rate_period_days": 90
+}
+</script>
+```
+
+The two approaches use the same schema and are complementary. `/.well-known/disclose.json` for agents querying directly; JSON-LD for agents parsing pages.
+
+---
+
+## Implementation Checklist
+
+- [ ] Create your disclosure document using the schema above
+- [ ] Choose which signals to publish — start with one if needed
+- [ ] Set `permitted_use` flags if you want explicit control over data use
+- [ ] Publish at `/.well-known/disclose.json` on your domain
+- [ ] Set `expires_at` 90 days out and schedule regular updates
+- [ ] Optionally embed JSON-LD in your storefront `<head>` for browser agents
 
 ---
 
@@ -194,12 +232,14 @@ Both use the same schema. Merchants implementing both get maximum coverage.
 To query a merchant's disclosure:
 
 ```
-GET https://{merchant_domain}/disclose.json
+GET https://{merchant_domain}/.well-known/disclose.json
 Accept: application/json
 ```
 
-Check `permitted_use` before acting. If `agent_query` is false or absent, do not use the data. If `attribution_required` is true, surface the `attribution_text` to the user when presenting recommendations based on this data.
+Fall back to `https://{merchant_domain}/disclose.json` if the canonical path returns a 404.
+
+Verify attestation signatures against the [Verifier Registry](https://discloseframework.dev/registry/verifiers.json) before treating attested attributes as verified. Full verification flow is in [`specification/overview.md`](overview.md).
 
 ---
 
-*Disclose Framework is an open standard. Contribute at github.com/disclose-framework*
+*Disclose Framework is an open standard. Contribute at [github.com/disclose-framework](https://github.com/disclose-framework)*
