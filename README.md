@@ -25,6 +25,7 @@ Disclose defines three participants:
 The flow is asynchronous and cacheable. Merchants publish; verifiers attest; agents consume. No centralized authority. No real-time negotiation required.
 
 Trust is not assigned by the framework. It emerges from visible, verifiable merchant behaviour.
+![Discovery path](discovery-path.svg)
 
 ---
 
