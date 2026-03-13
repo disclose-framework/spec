@@ -1,0 +1,57 @@
+<svg width="680" height="520" viewBox="0 0 680 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888880" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Agent start node -->
+  <rect x="240" y="20" width="200" height="44" rx="4" fill="#e8e6e0" stroke="#888880" stroke-width="0.5"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-weight="500" font-size="14" fill="#0a0a0a" x="340" y="42" text-anchor="middle" dominant-baseline="central">AI agent request</text>
+
+  <!-- Arrow down -->
+  <line x1="340" y1="64" x2="340" y2="110" stroke="#888880" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Canonical path node -->
+  <rect x="200" y="110" width="280" height="56" rx="4" fill="#e8e6e0" stroke="#888880" stroke-width="0.5"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-weight="500" font-size="14" fill="#0a0a0a" x="340" y="130" text-anchor="middle" dominant-baseline="central">Check canonical path</text>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="340" y="152" text-anchor="middle" dominant-baseline="central">/.well-known/disclose.json</text>
+
+  <!-- Arrow down to diamond -->
+  <line x1="340" y1="166" x2="340" y2="214" stroke="#888880" stroke-width="1" marker-end="url(#arrow)"/>
+
+  <!-- Decision diamond -->
+  <polygon points="340,214 406,254 340,294 274,254" fill="#e8e6e0" stroke="#888880" stroke-width="0.5"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="340" y="254" text-anchor="middle" dominant-baseline="central">200 OK?</text>
+
+  <!-- Yes arrow right -->
+  <line x1="406" y1="254" x2="524" y2="254" stroke="#888880" stroke-width="1" marker-end="url(#arrow)"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="462" y="242" text-anchor="middle">yes</text>
+
+  <!-- Parse and consume node -->
+  <rect x="524" y="230" width="128" height="48" rx="4" fill="#e8e6e0" stroke="#888880" stroke-width="0.5"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-weight="500" font-size="14" fill="#0a0a0a" x="588" y="248" text-anchor="middle" dominant-baseline="central">Parse and</text>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-weight="500" font-size="14" fill="#0a0a0a" x="588" y="266" text-anchor="middle" dominant-baseline="central">consume</text>
+
+  <!-- No arrow down -->
+  <line x1="340" y1="294" x2="340" y2="354" stroke="#888880" stroke-width="1" marker-end="url(#arrow)"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="356" y="328" text-anchor="start">no / 404</text>
+
+  <!-- Fallback node -->
+  <rect x="200" y="354" width="280" height="56" rx="4" fill="#e8e6e0" stroke="#888880" stroke-width="0.5"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-weight="500" font-size="14" fill="#0a0a0a" x="340" y="374" text-anchor="middle" dominant-baseline="central">Try fallback path</text>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="340" y="396" text-anchor="middle" dominant-baseline="central">/disclose.json</text>
+
+  <!-- Found: L-route from fallback right edge up to consume node -->
+  <path d="M480 382 L524 382 L524 278" fill="none" stroke="#888880" stroke-width="1" marker-end="url(#arrow)"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="530" y="338" text-anchor="start">found</text>
+
+  <!-- Not found arrow down -->
+  <line x1="340" y1="410" x2="340" y2="466" stroke="#888880" stroke-width="1" marker-end="url(#arrow)"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="356" y="442" text-anchor="start">not found</text>
+
+  <!-- No disclosure node (dashed) -->
+  <rect x="240" y="466" width="200" height="36" rx="4" fill="none" stroke="#888880" stroke-width="0.5" stroke-dasharray="4 2"/>
+  <text font-family="'DM Mono', 'Courier New', monospace" font-size="12" fill="#888880" x="340" y="484" text-anchor="middle" dominant-baseline="central">No disclosure available</text>
+
+</svg>
