@@ -560,7 +560,37 @@ Agents SHOULD cache this registry and refresh it periodically. Agents MUST valid
 
 ### Verifier Benchmarks
 
-Verifiers accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. Verifier benchmarks are out of scope for this version of this specification. However, the field `disclose:benchmark_ref` is reserved in the attribute namespace for future use.
+Verifiers accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. The `benchmark` object allows Verifiers to publish that context alongside an attestation.
+
+The `benchmark` object is OPTIONAL. Its absence does not affect attestation validity. Verifiers who include it are providing interpretive context, not a scoring input.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `vertical` | string | Yes | Category label for the merchant's vertical (e.g., `apparel`, `consumer_electronics`, `beverage`) |
+| `source` | string | Yes | Always `verifier_aggregate` in this version |
+| `p50` | decimal | No | Median value for this signal across the Verifier's merchant portfolio for the stated vertical |
+| `p90` | decimal | No | 90th percentile value for the same population |
+| `sample_size_band` | string | No | Population range (e.g., `"1000-5000"`). A band rather than exact count, allowing Verifiers to publish context without exposing precise portfolio data. |
+
+Example attestation with benchmark:
+```json
+{
+  "verifier_id": "loop-returns.com",
+  "verifier_name": "Loop Returns",
+  "attested_attributes": ["disclose:product_return_rate"],
+  "attested_at": "2026-02-01T00:00:00Z",
+  "signature": "eyJhbGci...",
+  "signing_key_id": "loop-2026",
+  "benchmark": {
+    "vertical": "apparel",
+    "source": "verifier_aggregate",
+    "p50": 0.18,
+    "p90": 0.32,
+    "sample_size_band": "1000-5000"
+  }
+}
+```
+*The same attestation structure applies across verticals. A `consumer_electronics` merchant attested by the same Verifier would show materially lower p50 and p90 values for return rate. A `beverage` merchant would show lower still, with churn-related signals carrying more interpretive weight.*
 
 ---
 
@@ -736,7 +766,7 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 |------|------------|
 | Agent | A platform, AI assistant, or automated system that queries Disclose data on behalf of a buyer |
 | Attestation | A cryptographically signed statement from a Verifier confirming that specific disclosed attributes have been independently verified |
-| Benchmark Reference | An optional pointer to a Verifier-published document providing vertical or category-level distributions for disclosed attributes. Reserved for a future extension; see `disclose:benchmark_ref`. |
+| Benchmark Reference | An optional object within a Verifier attestation providing vertical or category-level signal distributions (p50, p90) derived from the Verifier's merchant portfolio. Intended to give agents interpretive context for attested values. Supported verticals are not enumerated in this version of the specification — Verifiers use free-form category labels. See [Verifier Benchmarks](#verifier-benchmarks). |
 | Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose.json` |
 | Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
 | Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate |
