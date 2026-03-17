@@ -50,7 +50,7 @@ Disclose defines a standard attribute set across 12 signal categories covering t
 
 Every metric is time-bounded, behaviour-based, and grounded in recorded outcomes — not assertions. Merchants disclose what happened, not what they claim.
 
-60+ signals across 12 categories. All optional. All machine-readable.
+61 signals across 12 categories. All optional. All machine-readable.
 
 ---
 
@@ -61,6 +61,7 @@ Every metric is time-bounded, behaviour-based, and grounded in recorded outcomes
 - **No scores, no badges** — Disclose publishes facts; agents and buyers draw their own conclusions
 - **Verifier-attested signals** — authorized third parties with access to source data cryptographically sign attestations, distinguishing verified disclosures from self-reported ones
 - **Manipulation-resistant by design** — raw, time-bounded, verifier-attested metrics are far harder to game than scores or badges, which create targets
+- **Credentialed query (forthcoming)** — merchants may signal willingness to share non-public attributes with verified agents; a formal query extension is anticipated in a future version
 
 ---
 
