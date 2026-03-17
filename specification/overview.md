@@ -68,6 +68,10 @@ A core principle of the Disclose Framework is that merchants retain full soverei
 
 There is no all-or-nothing requirement. A merchant may publish a single attribute and add additional attributes over time as their business matures or as competitive incentives emerge. This progressive enhancement model lowers the barrier to participation while preserving the integrity of the standard.
 
+### Credentialed Query (Anticipated Extension)
+
+Some merchants may hold operational signals they are willing to share with verified agents but not publish in a public disclosure document. The current specification does not define a mechanism for this. A future extension will define a credentialed query path — allowing agents with verified identity to request non-public attributes directly from a merchant's infrastructure. Merchants who wish to signal this capability in advance MAY include a disclose:credentialed_query_supported: true attribute in their public disclosure document. No further behaviour is defined for this attribute in the current version.
+
 ### Commerce Risk Coverage
 
 The standard attribute set is designed to address the core risks an agent must evaluate before recommending a purchase:
