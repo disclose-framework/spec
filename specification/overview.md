@@ -726,6 +726,30 @@ The `merchant_domain` field in the disclosure document MUST match the domain fro
 
 Attestations include `attested_at` and `expires_at` timestamps. Agents SHOULD treat expired attestations as unverified, equivalent to self-reported attributes.
 
+### Merchant Impersonation and Attestation Replay
+
+A fraudster operating an impersonation domain MAY copy a legitimate merchant's `disclose.json` verbatim, including any attested signals. The `merchant_domain` field requirement (see Domain Binding) invalidates copied documents where the field is present and correctly set. However, agents MUST NOT rely solely on the `merchant_domain` field as fraud protection — DNS-level verification that the serving domain is the legitimate merchant domain is a TLS and network concern outside the scope of this framework.
+
+The primary defense against attestation replay is the domain-binding requirement in the Verifier signature payload. Verifiers MUST include the merchant's canonical domain in the signed attestation payload. Copying an attestation to a different domain produces a signature that fails verification at step 5 of the Signature Verification flow above.
+
+Agents MUST perform full signature verification as specified. Agents MUST NOT shortcut verification by trusting the `merchant_domain` field without also verifying the Verifier signature covers that domain.
+
+### Multi-Domain Merchants
+
+A merchant operating across multiple regional storefronts (e.g., `brandname.com`, `brandname.ca`, `brandname.com.au`) MAY hold attestations covering more than one domain. In this case, the Verifier signature MUST cover an explicit `verified_domains` array rather than a single domain field. The serving domain MUST appear in the `verified_domains` array for the attestation to be considered valid.
+
+Each domain's inclusion in `verified_domains` reflects explicit Verifier confirmation of data coverage for that storefront. It is not merchant self-declaration. Verifiers MUST NOT include a domain in `verified_domains` unless they hold independent performance data for that storefront. Verifiers SHOULD NOT treat regional storefronts and operationally distinct brand domains (e.g., a mainline store and an outlet store) as equivalent for attestation purposes.
+
+### Attestation Revocation
+
+Verifiers MUST maintain a mechanism to revoke attestations before their `expires_at` date where a merchant's underlying data has changed materially. Verifiers SHOULD publish a revocation endpoint or revocation list at a stable URL declared in the Verifier Registry entry.
+
+Agents SHOULD check revocation status where a Verifier publishes a revocation endpoint. Agents MAY treat an unexpired attestation as valid where no revocation endpoint is available, but SHOULD note this limitation when surfacing attested signals.
+
+### Verification Performance
+
+Cryptographic signature verification is local computation performed against data already retrieved in the `disclose.json` fetch. It does not require an additional network request in the common case where the Verifier's public key is cached. Added latency is negligible and does not materially affect agent transaction timing. Agents SHOULD cache Verifier public keys with a refresh interval consistent with the Verifier's published key rotation policy.
+
 ---
 
 ## Agent Consumption Guidelines
