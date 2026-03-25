@@ -62,7 +62,7 @@ Unlike transaction protocols, Disclose does not require real-time negotiation be
 
 ### Merchant Sovereignty
 
-A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which verifiers to authorize, and when disclosures are updated or removed. The framework standardizes the format and verification mechanism — not the content or extent of disclosure.
+A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which verifiers to authorize, and when disclosures are updated or removed. The framework standardizes the format and verification mechanism — not the content or extent of disclosure. Signals in a disclosure document reflect the channel scope declared in `channel_scope`. Where no value is declared, signals reflect the merchant's DTC storefront only.
 
 ### Selective Disclosure
 
@@ -215,6 +215,7 @@ Agents MUST NOT require a disclosure document to be present in order to complete
 | `merchant_domain` | string | Yes | The canonical domain of the merchant (e.g., `"merchant.example.com"`) |
 | `issued_at` | string | Yes | RFC 3339 timestamp of when this document was generated |
 | `expires_at` | string | No | RFC 3339 timestamp after which agents SHOULD re-fetch |
+| `channel_scope` | string | No | Declares the channel(s) reflected by signals in this document. Values: `dtc`, `all_direct`, `all_channels`. Default if absent: `dtc`. |
 | `attributes` | object | Yes | Flat key-value map of disclosed merchant attributes |
 | `attestations` | array | No | Array of verifier attestation objects |
 
@@ -603,6 +604,7 @@ Example attestation with benchmark:
 {
   "disclose_version": "0.2",
   "merchant_domain": "merchant.example.com",
+  "channel_scope": "dtc",
   "issued_at": "2026-02-24T00:00:00Z",
   "expires_at": "2026-05-24T00:00:00Z",
   "attributes": {
