@@ -42,7 +42,7 @@ This philosophy also protects against gaming. Scores and badges create targets. 
 
 ### Self-Reported Attribute Integrity
 
-Merchants MAY publish disclosures without s. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. The framework does not currently define a formal dispute process for false self-reported disclosures; however, platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification will define a community-based flagging and review process.
+Merchants MAY publish disclosures without s. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. Merchants MAY declare the platform origin of self-reported attributes using the sources array. Source declarations do not constitute attestation. The framework does not currently define a formal dispute process for false self-reported disclosures; however, platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification will define a community-based flagging and review process.
 
 ---
 
@@ -217,6 +217,7 @@ Agents MUST NOT require a disclosure document to be present in order to complete
 | `expires_at` | string | No | RFC 3339 timestamp after which agents SHOULD re-fetch |
 | `channel_scope` | string | No | Declares the channel(s) reflected by signals in this document. Values: `dtc`, `all_direct`, `all_channels`. Default if absent: `dtc`. |
 | `attributes` | object | Yes | Flat key-value map of disclosed merchant attributes |
+| `sources` | array | No | Array of platform source objects declaring the origin of specific self-reported attributes. Source declarations do not constitute attestation. Agents MAY use source declarations to calibrate confidence in self-reported signals. |
 | `attestations` | array | No | Array of verifier attestation objects |
 
 ### Attribute Namespace
@@ -470,6 +471,53 @@ Signals derived from buyer reviews and ratings. These differ from operational me
 
 ---
 
+## Sources
+
+### Purpose
+
+A source declaration identifies the platform or system from which specific 
+self-reported attributes were derived. Sources are distinct from attestations: 
+a source declares data origin, not cryptographic verification. Agents MAY use 
+source declarations to calibrate confidence in self-reported signals — 
+platform-derived data is harder to manipulate than merchant-entered data, 
+but carries no verifier accountability.
+
+The sources array creates a legible upgrade path. A platform appearing in 
+`sources` today MAY become a registered Verifier and appear in `attestations` 
+once formal attestation is established. Agents SHOULD treat the same signal 
+attested by a registered Verifier as materially stronger than the same signal 
+declared via a source entry.
+
+### Source Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `source_id` | string | Yes | Identifier for the originating platform (e.g., `"shopify"`, `"lightspeed"`) |
+| `source_name` | string | Yes | Human-readable name of the platform |
+| `retrieved_at` | string | Yes | RFC 3339 timestamp of when the data was retrieved from the platform |
+| `attributed_attributes` | array of strings | Yes | List of `disclose:` attribute keys derived from this source |
+
+Example source entry:
+```json
+{
+  "source_id": "shopify",
+  "source_name": "Shopify",
+  "retrieved_at": "2026-03-26T00:00:00Z",
+  "attributed_attributes": [
+    "disclose:product_return_rate",
+    "disclose:product_return_rate_period_days",
+    "disclose:on_time_shipment_rate",
+    "disclose:on_time_shipment_rate_period_days",
+    "disclose:chargeback_rate",
+    "disclose:chargeback_rate_period_days",
+    "disclose:order_accuracy_rate",
+    "disclose:order_accuracy_rate_period_days",
+    "disclose:refund_processing_time_median_days"
+  ]
+}
+```
+---
+
 ## Attestations
 
 ### Purpose
@@ -663,6 +711,24 @@ Example attestation with benchmark:
     "disclose:domain_age_days": 2847,
     "disclose:business_registration_verified": true
   },
+"sources": [
+  {
+    "source_id": "shopify",
+    "source_name": "Shopify",
+    "retrieved_at": "2026-02-24T00:00:00Z",
+    "attributed_attributes": [
+      "disclose:product_return_rate",
+      "disclose:product_return_rate_period_days",
+      "disclose:on_time_shipment_rate",
+      "disclose:on_time_shipment_rate_period_days",
+      "disclose:chargeback_rate",
+      "disclose:chargeback_rate_period_days",
+      "disclose:order_accuracy_rate",
+      "disclose:order_accuracy_rate_period_days",
+      "disclose:refund_processing_time_median_days"
+    ]
+  }
+],
   "attestations": [
     {
       "verifier_id": "loop-returns.com",
