@@ -588,14 +588,14 @@ Example attestation with benchmark:
   "attested_at": "2026-02-01T00:00:00Z",
   "signature": "eyJhbGci...",
   "signing_key_id": "loop-2026",
-  "payment_commitment": null,
   "benchmark": {
     "vertical": "apparel",
     "source": "verifier_aggregate",
     "p50": 0.18,
     "p90": 0.32,
     "sample_size_band": "1000-5000"
-  }
+  },
+  "payment_commitment": null
 }
 ```
 *The same attestation structure applies across verticals. A `consumer_electronics` merchant attested by the same Verifier would show materially lower p50 and p90 values for return rate. A `beverage` merchant would show lower still, with churn-related signals carrying more interpretive weight.*
