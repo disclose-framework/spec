@@ -42,7 +42,7 @@ This philosophy also protects against gaming. Scores and badges create targets. 
 
 ### Self-Reported Attribute Integrity
 
-Merchants MAY publish disclosures without attestations. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. The framework does not currently define a formal dispute process for false self-reported disclosures; however, platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification will define a community-based flagging and review process.
+Merchants MAY publish disclosures without s. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. The framework does not currently define a formal dispute process for false self-reported disclosures; however, platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification will define a community-based flagging and review process.
 
 ---
 
@@ -164,7 +164,7 @@ In this example, the agent can observe that while the Merchant's overall return 
 
 ### Item-Scope Signals
 
-The following attributes are particularly well-suited to Item scope, as they reflect properties intrinsic to the item rather than aggregate merchant behaviour. These are natural attestation targets for brand registries, manufacturer databases, and product data platforms:
+The following attributes are particularly well-suited to Item scope, as they reflect properties intrinsic to the item rather than aggregate merchant behaviour. These are natural  targets for brand registries, manufacturer databases, and product data platforms:
 
 | Attribute | Item-scope meaning |
 |---|---|
@@ -489,6 +489,7 @@ Merchants MAY publish disclosures without attestations. Unattested attributes ar
 | `expires_at` | string | No | RFC 3339 timestamp after which the attestation should no longer be trusted |
 | `signature` | string | Yes | Base64url-encoded cryptographic signature over the attestation payload |
 | `signing_key_id` | string | Yes | Key ID (`kid`) corresponding to the Verifier's published signing key |
+| `payment_commitment` | object or null | No | Optional payment routing instruction for outcome-based verifier compensation. When present, declares the verifier's fee terms and routing destination. Full mechanism defined in a future extension. MAY be `null` in this version. |
 
 Example attestation:
 ```json
@@ -508,7 +509,8 @@ Example attestation:
   "attested_at": "2026-02-01T00:00:00Z",
   "expires_at": "2026-08-01T00:00:00Z",
   "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-  "signing_key_id": "loop-2026"
+  "signing_key_id": "loop-2026",
+  "payment_commitment": null
 }
 ```
 
@@ -586,6 +588,7 @@ Example attestation with benchmark:
   "attested_at": "2026-02-01T00:00:00Z",
   "signature": "eyJhbGci...",
   "signing_key_id": "loop-2026",
+  "payment_commitment": null,
   "benchmark": {
     "vertical": "apparel",
     "source": "verifier_aggregate",
@@ -677,7 +680,8 @@ Example attestation with benchmark:
       "attested_at": "2026-02-01T00:00:00Z",
       "expires_at": "2026-08-01T00:00:00Z",
       "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-      "signing_key_id": "loop-2026"
+      "signing_key_id": "loop-2026",
+      "payment_commitment": null
     },
     {
       "verifier_id": "narvar.com",
@@ -693,7 +697,8 @@ Example attestation with benchmark:
       "attested_at": "2026-02-10T00:00:00Z",
       "expires_at": "2026-08-10T00:00:00Z",
       "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
-      "signing_key_id": "narvar-2026"
+      "signing_key_id": "narvar-2026",
+      "payment_commitment": null
     }
   ]
 }
@@ -804,6 +809,7 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Merchant | The seller or service provider publishing disclosure signals. Maps to `schema:Organization`. Signals published at Merchant scope reflect aggregate operational performance across all of the merchant's transactions — for example, overall return rate or average fulfillment time. Merchant-scope signals establish baseline seller confidence independent of any specific Item or Offer. The term "Merchant" is used throughout this specification in preference to "Organization" to signal commerce intent and to remain consistent with the concept of Merchant of Record. One of three disclosure scopes; see [Disclosure Scopes](#disclosure-scopes). |
 | Merchant Sovereignty | The principle that merchants retain full control over what they disclose, to whom, and when |
 | Observation Window | The time period over which a metric is computed, declared via a companion `_period_days` attribute |
+| Payment Commitment | An optional field in an attestation object declaring a verifier's fee terms and payment routing instruction for outcome-based compensation. Supports success-based fee models where verifier compensation is tied to a completed transaction rather than a query. `null` in v0.2. Full mechanism defined in a future extension. |
 | Offer | The intersection of a specific Merchant and a specific Item — this seller, selling this item, under these conditions. Maps to `schema:Offer`. Signals published at Offer scope reflect how a particular Merchant performs on a particular Item: for example, the return rate for this SKU at this seller, or the inventory accuracy rate for this item. Offer-scope signals are the most precise unit of disclosure in the framework, and are the primary data layer an agent uses when comparing the same Item across multiple Merchants. Because Offers are inherently transient — prices and availability change — agents should treat Offer-scope signals as time-sensitive and respect the `attested_at` timestamp in any covering attestation. One of three disclosure scopes; see [Disclosure Scopes](#disclosure-scopes). |
 | Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time |
 | Review Recency | The proportion of a merchant's total reviews submitted within a recent time window (90 or 365 days), used to assess the freshness of aggregate review ratings |
