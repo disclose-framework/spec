@@ -880,5 +880,6 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time |
 | Review Recency | The proportion of a merchant's total reviews submitted within a recent time window (90 or 365 days), used to assess the freshness of aggregate review ratings |
 | Selective Disclosure | The ability to disclose specific attributes without an all-or-nothing requirement |
+| Source | A platform or system from which self-reported attributes were derived. Declared in the `sources` array. Distinct from a Verifier: a source carries no cryptographic accountability. Agents MAY treat platform-sourced attributes with higher confidence than merchant-entered attributes. Recommended `source_id` values: `shopify`, `lightspeed`, `woocommerce`, `bigcommerce`, `magento`, `squarespace`, `wix`, `salesforce_commerce`, `netsuite`. Additional values are permitted; platforms not on this list SHOULD use their primary domain as the `source_id`. |
 | Verifier | An authorized third party that cryptographically attests to the accuracy of specific merchant disclosures |
 | Verifier Registry | The canonical, publicly accessible list of authorized Disclose Verifiers maintained by the framework governing body |
