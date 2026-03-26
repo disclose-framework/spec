@@ -6,7 +6,7 @@ The Disclose Framework is an open standard for merchant disclosure attestations 
 
 Disclose provides that infrastructure layer. It enables AI agents, platforms, and automated systems to access verified, machine-readable information about merchant practices — including return policies, fulfillment performance, review authenticity, and other behavioural signals — when making or informing purchasing decisions on behalf of buyers.
 
-Disclose operates as a disclosure layer that sits above the transaction. Before an agent decides where to buy, Disclose provides the structured signal data needed to make a trustworthy recommendation. It does not process payments, manage checkout sessions, or execute transactions. Its sole function is to standardize how merchants publish verified disclosures and how agents consume them.
+Disclose operates as a disclosure layer that sits below discovery and above the transaction. Before an agent decides where to buy, Disclose provides the structured signal data needed to make a trustworthy recommendation. It does not process payments, manage checkout sessions, or execute transactions. Its sole function is to standardize how merchants publish verified disclosures and how agents consume them.
 
 ---
 
