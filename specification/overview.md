@@ -497,6 +497,20 @@ declared via a source entry.
 | `retrieved_at` | string | Yes | RFC 3339 timestamp of when the data was retrieved from the platform |
 | `attributed_attributes` | array of strings | Yes | List of `disclose:` attribute keys derived from this source |
 
+### Recommended `source_id` Values
+
+| `source_id` value | Platform |
+|---|---|
+| `shopify` | Shopify |
+| `adobe_commerce` | Adobe Commerce (Magento) |
+| `agentforce_commerce` | Agentforce Commerce (Salesforce) |
+| `bigcommerce` | BigCommerce |
+| `commercetools` | commercetools |
+| `woocommerce` | WooCommerce |
+| `shopline` | Shopline |
+
+Platforms not listed here SHOULD use their primary domain as the `source_id` (e.g., `"acmeplatform.com"`).
+
 Example source entry:
 ```json
 {
