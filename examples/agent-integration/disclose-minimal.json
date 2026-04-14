@@ -4,8 +4,13 @@
   "issued_at": "2026-03-01T00:00:00Z",
   "expires_at": "2026-06-01T00:00:00Z",
   "attributes": {
-    "disclose:on_time_shipment_rate": 0.97,
-    "disclose:on_time_shipment_rate_period_days": 90
+    "disclose:on_time_shipment_rate": {
+      "value": 0.97,
+      "observation_window_days": 90,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    }
   },
   "permitted_use": {
     "agent_query": true,
