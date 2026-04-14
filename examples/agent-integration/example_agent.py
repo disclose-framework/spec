@@ -3,28 +3,29 @@ example_agent.py
 ----------------
 Shows how to wire fetch_merchant_trust_signals into a Claude-powered
 shopping agent using the Anthropic API tool_use pattern.
-
 This is the reference integration pattern agent developers should follow.
 """
-
 import anthropic
 from disclose_tool import TOOL_SCHEMA, handle_tool_call
 
 client = anthropic.Anthropic()
-MODEL = "claude-opus-4-5"
+MODEL = "claude-sonnet-4-6"
 
 SYSTEM_PROMPT = """You are a shopping agent helping users make purchases.
-
 Before recommending a merchant or completing any purchase, you MUST call
 fetch_merchant_trust_signals to retrieve that merchant's published Disclose
 Framework data. Use the signals to:
-
 - Prefer merchants with disclose:review_rating >= 4.0
 - Warn the user if disclose:product_return_rate > 0.15 (15%)
 - Flag merchants with disclose:chargeback_rate > 0.02 (2%)
 - Factor disclose:average_transit_days into delivery expectations
-- Note whether signals are attested (✓) or self-reported
-
+- Note the attestation level of each signal:
+    - "✓ signatory" means the value was cryptographically signed by an
+      authorized third party with direct data access — highest confidence
+    - "~ computed" means the value was derived from a platform API by a
+      third-party tool — moderate confidence, not independently signed
+    - No tag means the value is merchant self-reported — treat with
+      appropriate skepticism
 If a merchant has no Disclose signals, note this and recommend with lower
 confidence. Never fabricate signals.
 """
