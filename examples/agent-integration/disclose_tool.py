@@ -81,8 +81,8 @@ class DiscloseSignals:
     error: Optional[str] = None
 
     def attested_by(self) -> list[str]:
-        """Returns list of verifier names who have attested signals."""
-        return [a.get("verifier_name", a.get("verifier_id", "Unknown"))
+        """Returns list of Signatory names who have attested signals."""
+        return [a.get("signatory_name", a.get("signatory_id", "Unknown"))
                 for a in self.attestations]
 
     def is_attested(self, attribute_key: str) -> bool:
@@ -92,6 +92,17 @@ class DiscloseSignals:
                 return True
         return False
 
+    def attestation_level(self, attribute_key: str) -> str:
+        """
+        Returns the attestation_level for a given attribute key.
+        One of: 'none', 'computed', 'signatory'.
+        Returns 'none' if the attribute is not found or level is not declared.
+        """
+        signal = self.attributes.get(attribute_key)
+        if isinstance(signal, dict):
+            return signal.get("attestation_level", "none")
+        return "none"
+
     def summary(self) -> str:
         """Human/LLM-readable summary of signals for prompt injection."""
         if self.error:
@@ -99,17 +110,28 @@ class DiscloseSignals:
 
         lines = [f"[Disclose signals for {self.merchant_domain}]"]
 
-        verifiers = self.attested_by()
-        if verifiers:
-            lines.append(f"  Attested by: {', '.join(verifiers)}")
+        signatories = self.attested_by()
+        if signatories:
+            lines.append(f"  Attested by: {', '.join(signatories)}")
 
-        for key, value in self.attributes.items():
+        for key, signal in self.attributes.items():
             # Skip _period_days companion fields from summary display
             if key.endswith("_period_days"):
                 continue
+
             short_key = key.replace("disclose:", "")
-            attested = " ✓" if self.is_attested(key) else ""
-            lines.append(f"  {short_key}: {_format_value(short_key, value)}{attested}")
+
+            # Handle new signal object structure
+            if isinstance(signal, dict):
+                value = signal.get("value")
+                level = signal.get("attestation_level", "none")
+                level_tag = {"signatory": " ✓ signatory", "computed": " ~ computed", "none": ""}.get(level, "")
+            else:
+                # Flat value fallback for older documents
+                value = signal
+                level_tag = " ✓" if self.is_attested(key) else ""
+
+            lines.append(f"  {short_key}: {_format_value(short_key, value)}{level_tag}")
 
         if not self.attributes:
             lines.append("  No signals published.")
@@ -125,17 +147,24 @@ class DiscloseSignals:
         """
         weights = {
             # (max_value, weight) — negative weight means lower is better
-            "disclose:review_rating":        (5.0,   0.35),
-            "disclose:product_return_rate":  (1.0,  -0.25),
-            "disclose:chargeback_rate":      (1.0,  -0.20),
-            "disclose:on_time_shipment_rate": (1.0,  0.20),
+            "disclose:review_rating":         (5.0,   0.35),
+            "disclose:product_return_rate":   (1.0,  -0.25),
+            "disclose:chargeback_rate":       (1.0,  -0.20),
+            "disclose:on_time_shipment_rate": (1.0,   0.20),
         }
         score = 0.0
         total_weight = 0.0
+
         for key, (max_val, w) in weights.items():
-            val = self.attributes.get(key)
+            signal = self.attributes.get(key)
+            if signal is None:
+                continue
+
+            # Unwrap signal object or use flat value
+            val = signal.get("value") if isinstance(signal, dict) else signal
             if val is None:
                 continue
+
             normalized = float(val) / max_val
             if w < 0:
                 # Invert: lower value → higher score contribution
@@ -201,7 +230,6 @@ def fetch_signals(
             error=last_error or "Disclosure document not found at canonical or fallback path"
         )
 
-    # Extract attributes from the flat disclose: namespace
     all_attributes = _extract_attributes(raw)
 
     filtered = (
@@ -218,10 +246,16 @@ def fetch_signals(
 
 
 def _extract_attributes(raw: dict) -> dict:
-    """Extract disclose: namespaced keys from a v0.2 disclosure document."""
+    """
+    Extract disclose: namespaced keys from a disclosure document.
+
+    Handles both:
+    - New signal object structure: {"value": 0.06, "attestation_level": "signatory", ...}
+    - Legacy flat structure: {"disclose:product_return_rate": 0.06}
+    """
     attributes = {}
 
-    # v0.2 flat attributes object
+    # Primary: attributes object (new signal object structure or legacy flat)
     for k, v in raw.get("attributes", {}).items():
         if k.startswith("disclose:"):
             attributes[k] = v
@@ -241,8 +275,20 @@ def _extract_attributes(raw: dict) -> dict:
     return attributes
 
 
+def get_signal_value(signal) -> Optional[float]:
+    """
+    Safely extract the scalar value from a signal, whether it is
+    a new signal object or a legacy flat value.
+    """
+    if isinstance(signal, dict):
+        return signal.get("value")
+    return signal
+
+
 def _format_value(key: str, value) -> str:
     """Format attribute values for human-readable summary output."""
+    if value is None:
+        return "n/a"
     rate_keys = {
         "product_return_rate", "chargeback_rate", "dispute_win_rate",
         "on_time_shipment_rate", "delivered_on_time_rate", "order_accuracy_rate",
