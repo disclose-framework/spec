@@ -4,85 +4,362 @@
   "issued_at": "2026-03-01T00:00:00Z",
   "expires_at": "2026-06-01T00:00:00Z",
   "attributes": {
-    "disclose:repeat_purchase_rate": 0.38,
-    "disclose:repeat_purchase_rate_period_days": 90,
-    "disclose:product_return_rate": 0.06,
-    "disclose:product_return_rate_period_days": 90,
-    "disclose:return_policy_type": "free",
-    "disclose:return_window_days": 30,
-    "disclose:refund_processing_time_median_days": 3.2,
-    "disclose:refund_processing_time_p90_days": 6.1,
-    "disclose:exchange_rate": 0.22,
-    "disclose:exchange_rate_period_days": 90,
-    "disclose:on_time_shipment_rate": 0.97,
-    "disclose:on_time_shipment_rate_period_days": 90,
-    "disclose:delivered_on_time_rate": 0.94,
-    "disclose:delivered_on_time_rate_period_days": 90,
-    "disclose:average_transit_days": 3.8,
-    "disclose:order_accuracy_rate": 0.991,
-    "disclose:order_accuracy_rate_period_days": 90,
-    "disclose:in_stock_rate": 0.96,
-    "disclose:in_stock_rate_period_days": 90,
-    "disclose:inventory_accuracy_rate": 0.98,
-    "disclose:inventory_accuracy_rate_period_days": 90,
-    "disclose:chargeback_rate": 0.003,
-    "disclose:chargeback_rate_period_days": 90,
-    "disclose:dispute_win_rate": 0.87,
-    "disclose:dispute_win_rate_period_days": 90,
-    "disclose:payment_method_coverage": ["card", "paypal", "shop_pay", "apple_pay", "buy_now_pay_later"],
-    "disclose:support_resolution_time_median_hours": 4.2,
-    "disclose:support_resolution_time_p90_hours": 22.0,
-    "disclose:support_channel_availability": ["live_chat", "email", "self_serve"],
-    "disclose:support_hours_coverage": "extended_hours",
-    "disclose:first_contact_resolution_rate": 0.81,
-    "disclose:first_contact_resolution_rate_period_days": 90,
-    "disclose:average_discount_rate": 0.12,
-    "disclose:average_discount_rate_period_days": 90,
-    "disclose:dynamic_pricing_used": false,
-    "disclose:review_rating": 4.7,
-    "disclose:review_count": 14200,
-    "disclose:review_verified_purchase_rate": 0.91,
-    "disclose:review_recency_90d_rate": 0.08,
-    "disclose:review_platform": "yotpo",
-    "disclose:sustainability_certified": true,
-    "disclose:sustainability_certifier": "B Corp",
-    "disclose:domain_age_days": 2847,
-    "disclose:business_registration_verified": true
+    "disclose:repeat_purchase_rate": {
+      "value": 0.38,
+      "observation_window_days": 90,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:product_return_rate": {
+      "value": 0.06,
+      "observation_window_days": 90,
+      "reported_by": "loop_returns",
+      "source": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "loop-returns.com",
+        "signatory_name": "Loop Returns",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+        "signing_key_id": "loop-2026"
+      }
+    },
+    "disclose:return_policy_type": {
+      "value": "free",
+      "reported_by": "loop_returns",
+      "source": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "loop-returns.com",
+        "signatory_name": "Loop Returns",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+        "signing_key_id": "loop-2026"
+      }
+    },
+    "disclose:return_window_days": {
+      "value": 30,
+      "reported_by": "loop_returns",
+      "source": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "loop-returns.com",
+        "signatory_name": "Loop Returns",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+        "signing_key_id": "loop-2026"
+      }
+    },
+    "disclose:refund_processing_time_median_days": {
+      "value": 3.2,
+      "observation_window_days": 90,
+      "reported_by": "loop_returns",
+      "source": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "loop-returns.com",
+        "signatory_name": "Loop Returns",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+        "signing_key_id": "loop-2026"
+      }
+    },
+    "disclose:refund_processing_time_p90_days": {
+      "value": 6.1,
+      "observation_window_days": 90,
+      "reported_by": "loop_returns",
+      "source": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "loop-returns.com",
+        "signatory_name": "Loop Returns",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+        "signing_key_id": "loop-2026"
+      }
+    },
+    "disclose:exchange_rate": {
+      "value": 0.22,
+      "observation_window_days": 90,
+      "reported_by": "loop_returns",
+      "source": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "loop-returns.com",
+        "signatory_name": "Loop Returns",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
+        "signing_key_id": "loop-2026"
+      }
+    },
+    "disclose:on_time_shipment_rate": {
+      "value": 0.97,
+      "observation_window_days": 90,
+      "reported_by": "narvar",
+      "source": "narvar",
+      "computed_by": "narvar",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "narvar.com",
+        "signatory_name": "Narvar",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
+        "signing_key_id": "narvar-2026"
+      }
+    },
+    "disclose:delivered_on_time_rate": {
+      "value": 0.94,
+      "observation_window_days": 90,
+      "reported_by": "narvar",
+      "source": "narvar",
+      "computed_by": "narvar",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "narvar.com",
+        "signatory_name": "Narvar",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
+        "signing_key_id": "narvar-2026"
+      }
+    },
+    "disclose:average_transit_days": {
+      "value": 3.8,
+      "observation_window_days": 90,
+      "reported_by": "narvar",
+      "source": "narvar",
+      "computed_by": "narvar",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "narvar.com",
+        "signatory_name": "Narvar",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
+        "signing_key_id": "narvar-2026"
+      }
+    },
+    "disclose:order_accuracy_rate": {
+      "value": 0.991,
+      "observation_window_days": 90,
+      "reported_by": "narvar",
+      "source": "narvar",
+      "computed_by": "narvar",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory_id": "narvar.com",
+        "signatory_name": "Narvar",
+        "attested_at": "2026-02-15T00:00:00Z",
+        "expires_at": "2026-08-15T00:00:00Z",
+        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
+        "signing_key_id": "narvar-2026"
+      }
+    },
+    "disclose:in_stock_rate": {
+      "value": 0.96,
+      "observation_window_days": 90,
+      "source": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "attestation": null
+    },
+    "disclose:inventory_accuracy_rate": {
+      "value": 0.98,
+      "observation_window_days": 90,
+      "source": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "attestation": null
+    },
+    "disclose:chargeback_rate": {
+      "value": 0.003,
+      "observation_window_days": 90,
+      "source": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "attestation": null
+    },
+    "disclose:dispute_win_rate": {
+      "value": 0.87,
+      "observation_window_days": 90,
+      "source": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "attestation": null
+    },
+    "disclose:payment_method_coverage": {
+      "value": ["card", "paypal", "shop_pay", "apple_pay", "buy_now_pay_later"],
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:support_resolution_time_median_hours": {
+      "value": 4.2,
+      "observation_window_days": 90,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:support_resolution_time_p90_hours": {
+      "value": 22.0,
+      "observation_window_days": 90,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:support_channel_availability": {
+      "value": ["live_chat", "email", "self_serve"],
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:support_hours_coverage": {
+      "value": "extended_hours",
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:first_contact_resolution_rate": {
+      "value": 0.81,
+      "observation_window_days": 90,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:average_discount_rate": {
+      "value": 0.12,
+      "observation_window_days": 90,
+      "source": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "attestation": null
+    },
+    "disclose:dynamic_pricing_used": {
+      "value": false,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:review_rating": {
+      "value": 4.7,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:review_count": {
+      "value": 14200,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:review_verified_purchase_rate": {
+      "value": 0.91,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:review_recency_90d_rate": {
+      "value": 0.08,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:review_platform": {
+      "value": "yotpo",
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:sustainability_certified": {
+      "value": true,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:sustainability_certifier": {
+      "value": "B Corp",
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:domain_age_days": {
+      "value": 2847,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:business_registration_verified": {
+      "value": true,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    }
   },
+  "sources": [
+    {
+      "source_id": "shopify",
+      "source_name": "Shopify",
+      "retrieved_at": "2026-03-01T00:00:00Z",
+      "attributed_attributes": [
+        "disclose:in_stock_rate",
+        "disclose:inventory_accuracy_rate",
+        "disclose:chargeback_rate",
+        "disclose:dispute_win_rate",
+        "disclose:average_discount_rate"
+      ]
+    }
+  ],
   "attestations": [
     {
-      "verifier_id": "loop-returns.com",
-      "verifier_name": "Loop Returns",
+      "signatory_id": "loop-returns.com",
+      "signatory_name": "Loop Returns",
       "attested_attributes": [
         "disclose:product_return_rate",
-        "disclose:product_return_rate_period_days",
         "disclose:return_policy_type",
         "disclose:return_window_days",
         "disclose:refund_processing_time_median_days",
         "disclose:refund_processing_time_p90_days",
-        "disclose:exchange_rate",
-        "disclose:exchange_rate_period_days"
+        "disclose:exchange_rate"
       ],
       "attested_at": "2026-02-15T00:00:00Z",
       "expires_at": "2026-08-15T00:00:00Z",
       "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-      "signing_key_id": "loop-2026"
+      "signing_key_id": "loop-2026",
+      "payment_commitment": null
     },
     {
-      "verifier_id": "narvar.com",
-      "verifier_name": "Narvar",
+      "signatory_id": "narvar.com",
+      "signatory_name": "Narvar",
       "attested_attributes": [
         "disclose:on_time_shipment_rate",
-        "disclose:on_time_shipment_rate_period_days",
         "disclose:delivered_on_time_rate",
-        "disclose:delivered_on_time_rate_period_days",
-        "disclose:order_accuracy_rate",
-        "disclose:order_accuracy_rate_period_days"
+        "disclose:average_transit_days",
+        "disclose:order_accuracy_rate"
       ],
       "attested_at": "2026-02-15T00:00:00Z",
       "expires_at": "2026-08-15T00:00:00Z",
       "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
-      "signing_key_id": "narvar-2026"
+      "signing_key_id": "narvar-2026",
+      "payment_commitment": null
     }
   ],
   "permitted_use": {
