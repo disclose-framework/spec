@@ -19,10 +19,10 @@ Today, no standard exists for merchants to publish this data in a way agents can
 Disclose defines three participants:
 
 - **Merchants** publish a structured disclosure document at `/.well-known/disclose.json` on their own domain
-- **Verifiers** — authorized third parties with access to source data — cryptographically attest to the accuracy of specific disclosures
-- **Agents** query disclosure documents, verify attestations, and use the signals to inform purchasing decisions
+- **Signatories** — authorized third parties with direct access to source data — cryptographically sign attestations confirming the accuracy of specific signals
+- **Agents** query disclosure documents, read attestation levels, and use the signals to inform purchasing decisions
 
-The flow is asynchronous and cacheable. Merchants publish; verifiers attest; agents consume. No centralized authority. No real-time negotiation required.
+The flow is asynchronous and cacheable. Merchants publish; Signatories attest; agents consume. No centralized authority. No real-time negotiation required.
 
 Trust is not assigned by the framework. It emerges from visible, verifiable merchant behaviour.
 ![Discovery path](discovery-path.svg)
@@ -56,11 +56,11 @@ Every metric is time-bounded, behaviour-based, and grounded in recorded outcomes
 
 ## Core Principles
 
-- **Merchant sovereignty** — participation is voluntary; merchants choose what to disclose, which verifiers to authorize, and when disclosures are updated or removed
+- **Merchant sovereignty** — participation is voluntary; merchants choose what to disclose, which Signatories to authorize, and when disclosures are updated or removed
 - **Selective disclosure** — no all-or-nothing requirement; start with one attribute and add more over time
 - **No scores, no badges** — Disclose publishes facts; agents and buyers draw their own conclusions
-- **Verifier-attested signals** — authorized third parties with access to source data cryptographically sign attestations, distinguishing verified disclosures from self-reported ones
-- **Manipulation-resistant by design** — raw, time-bounded, verifier-attested metrics are far harder to game than scores or badges, which create targets
+- **Three attestation tiers** — every signal carries an `attestation_level` of `none` (merchant self-reported), `computed` (pulled from a platform API and calculated by a third-party tool), or `signatory` (cryptographically signed by a Signatory with direct data access). Agents weight signals accordingly
+- **Manipulation-resistant by design** — raw, time-bounded, Signatory-attested metrics are far harder to game than scores or badges, which create targets
 - **Credentialed query (forthcoming)** — merchants may signal willingness to share non-public attributes with verified agents; a formal query extension is anticipated in a future version
 
 ---
@@ -68,6 +68,7 @@ Every metric is time-bounded, behaviour-based, and grounded in recorded outcomes
 ## Quick Start
 
 A minimal disclosure document looks like this:
+
 ```json
 {
   "disclose_version": "0.2",
@@ -75,16 +76,36 @@ A minimal disclosure document looks like this:
   "issued_at": "2026-02-24T00:00:00Z",
   "expires_at": "2026-05-24T00:00:00Z",
   "attributes": {
-    "disclose:repeat_purchase_rate": 0.38,
-    "disclose:repeat_purchase_rate_period_days": 90,
-    "disclose:product_return_rate": 0.06,
-    "disclose:product_return_rate_period_days": 90,
-    "disclose:return_policy_type": "free",
-    "disclose:return_window_days": 30,
-    "disclose:on_time_shipment_rate": 0.97,
-    "disclose:on_time_shipment_rate_period_days": 90,
-    "disclose:chargeback_rate": 0.003,
-    "disclose:chargeback_rate_period_days": 90
+    "disclose:repeat_purchase_rate": {
+      "value": 0.38,
+      "observation_window_days": 90,
+      "reported_by": "merchant",
+      "attestation_level": "none",
+      "attestation": null
+    },
+    "disclose:product_return_rate": {
+      "value": 0.06,
+      "observation_window_days": 90,
+      "source": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "attestation": null
+    },
+    "disclose:on_time_shipment_rate": {
+      "value": 0.97,
+      "observation_window_days": 90,
+      "source": "loop_returns",
+      "reported_by": "loop_returns",
+      "computed_by": "loop_returns",
+      "attestation_level": "signatory",
+      "attestation": {
+        "signatory": "loop_returns",
+        "signatory_url": "https://loopreturns.com",
+        "signed_at": "2026-02-24T00:00:00Z",
+        "signature": "abc123..."
+      }
+    }
   }
 }
 ```
@@ -97,7 +118,7 @@ Publish this at `/.well-known/disclose.json` on your domain. That's a valid Disc
 
 | Document | Description |
 |---|---|
-| [Specification](specification/overview.md) | Full specification: schema, attributes, attestations, verifier registry, governance, security, and versioning |
+| [Specification](specification/overview.md) | Full specification: schema, attributes, attestations, Signatory registry, governance, security, and versioning |
 
 This is a v0.2 draft. The specification is open for review and comment.
 
@@ -107,7 +128,7 @@ This is a v0.2 draft. The specification is open for review and comment.
 
 This specification is in active development. Current priorities:
 
-**Verifier partners** — Platforms with access to merchant operational data (returns processors, fulfillment providers, post-purchase platforms, payment processors) interested in becoming authorized attestors. Verifiers are listed in the public registry and cryptographically sign attestations for the attributes they are authorized to verify. [See the Verifier Registry governance process →](specification/overview.md#registry-governance)
+**Signatories** — Platforms with direct access to merchant operational data (returns processors, fulfillment providers, post-purchase platforms, payment processors) interested in becoming authorized Signatories. Signatories are listed in the public registry and cryptographically sign attestations for the signals they are authorized to confirm. [See the Signatory Registry governance process →](specification/overview.md#registry-governance)
 
 **Agent platform partners** — AI agent developers and commerce platforms interested in consuming Disclose signals to inform purchasing recommendations.
 
