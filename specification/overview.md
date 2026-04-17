@@ -62,7 +62,7 @@ Unlike transaction protocols, Disclose does not require real-time negotiation be
 
 ### Merchant Sovereignty
 
-A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which Signatories to authorize, and when disclosures are updated or removed. The framework standardizes the format and verification mechanism — not the content or extent of disclosure. Signals in a disclosure document reflect the channel scope declared in `channel_scope`. Where no value is declared, signals reflect the merchant's DTC storefront only.
+A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which Signatories to authorize, and when disclosures are updated or removed. The framework standardizes the format and verification mechanism — not the content or extent of disclosure. By default, all signals reflect DTC performance only. Merchants with multi-channel operations can declare additional channels using channel_scope.
 
 ### Selective Disclosure
 
