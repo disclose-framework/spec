@@ -18,7 +18,7 @@ Today, no standard exists for merchants to publish this data in a way agents can
 
 Disclose defines three participants:
 
-- **Merchants** publish a structured disclosure document at `/.well-known/disclose.json` on their own domain
+- **Merchants** publish a structured disclosure document at `/.well-known/disclose` on their own domain
 - **Signatories** — authorized third parties with direct access to source data — cryptographically sign attestations confirming the accuracy of specific signals
 - **Agents** query disclosure documents, read attestation levels, and use the signals to inform purchasing decisions
 
@@ -110,7 +110,7 @@ A minimal disclosure document looks like this:
 }
 ```
 
-Publish this at `/.well-known/disclose.json` on your domain. That's a valid Disclose implementation.
+Publish this at `/.well-known/disclose` on your domain. That's a valid Disclose implementation.
 
 ---
 
