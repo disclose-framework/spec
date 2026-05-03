@@ -20,18 +20,18 @@ The full specification is in [`specification/overview.md`](overview.md). This gu
 Publish your disclosure document at:
 
 ```
-https://www.merchantname.com/.well-known/disclose.json
+https://www.merchantname.com/.well-known/disclose
 ```
 
 This is the canonical path. Agents check here first. No registration or configuration required.
 
-If your hosting platform does not support the `/.well-known/` directory (some hosted storefronts do not), publish at the domain root instead:
+If your hosting platform does not support the `/.well-known/` directory (some hosted storefronts do not), agents will also check `/.well-known/disclose.json` before falling back to the domain root:
 
 ```
 https://www.merchantname.com/disclose.json
 ```
 
-Agents will fall back to the root path if the canonical path returns a 404.
+Agents will fall back to the root path if both `/.well-known/` paths return a 404.
 
 ---
 
@@ -212,7 +212,7 @@ For agents that browse pages rather than querying files directly, you can also e
 </script>
 ```
 
-The two approaches use the same schema and are complementary. `/.well-known/disclose.json` for agents querying directly; JSON-LD for agents parsing pages.
+The two approaches use the same schema and are complementary. `/.well-known/disclose` for agents querying directly; JSON-LD for agents parsing pages.
 
 ---
 
@@ -221,7 +221,7 @@ The two approaches use the same schema and are complementary. `/.well-known/disc
 - [ ] Create your disclosure document using the schema above
 - [ ] Choose which signals to publish — start with one if needed
 - [ ] Set `permitted_use` flags if you want explicit control over data use
-- [ ] Publish at `/.well-known/disclose.json` on your domain
+- [ ] Publish at `/.well-known/disclose` on your domain
 - [ ] Set `expires_at` 90 days out and schedule regular updates
 - [ ] Optionally embed JSON-LD in your storefront `<head>` for browser agents
 
@@ -232,11 +232,11 @@ The two approaches use the same schema and are complementary. `/.well-known/disc
 To query a merchant's disclosure:
 
 ```
-GET https://{merchant_domain}/.well-known/disclose.json
+GET https://{merchant_domain}/.well-known/disclose
 Accept: application/json
 ```
 
-Fall back to `https://{merchant_domain}/disclose.json` if the canonical path returns a 404.
+Fall back to `https://{merchant_domain}/.well-known/disclose.json`, then `https://{merchant_domain}/disclose.json` if the canonical path returns a 404.
 
 Verify attestation signatures against the [Verifier Registry](https://discloseframework.dev/registry/verifiers.json) before treating attested attributes as verified. Full verification flow is in [`specification/overview.md`](overview.md).
 
