@@ -143,7 +143,7 @@ An Offer-scoped signal takes precedence over a Merchant-scoped signal for the sa
 
 ### Scope in the Disclosure Document
 
-Offer-scoped and Item-scoped signals are published within the same `/.well-known/disclose.json` document. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
+Offer-scoped and Item-scoped signals are published within the same `/.well-known/disclose` document. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
 
 ```json
 {
@@ -195,16 +195,16 @@ The following attributes are particularly well-suited to Item scope, as they ref
 
 Merchants publish their disclosure document at a well-known URI:
 ```
-/.well-known/disclose.json
+/.well-known/disclose
 ```
 
 This endpoint MUST return a valid JSON document conforming to the Disclose schema. The endpoint SHOULD support HTTP caching via standard `Cache-Control` headers.
 
-Agents SHOULD check `/.well-known/disclose.json` first. For merchants on hosted platforms that do not support the `/.well-known/` directory, `disclose.json` at the domain root is a supported fallback. Agents MUST check the canonical path first and fall back to the root path only if the canonical path returns a 404.
+Agents SHOULD check `/.well-known/disclose` first. For merchants on hosted platforms that do not support the `/.well-known/` directory, `/.well-known/disclose.json` is a supported legacy fallback, followed by `disclose.json` at the domain root. Agents MUST check the canonical path first and fall back in order if each path returns a 404.
 
 Example request:
 ```
-GET /.well-known/disclose.json HTTP/1.1
+GET /.well-known/disclose HTTP/1.1
 Host: merchant.example.com
 Accept: application/json
 ```
@@ -813,7 +813,7 @@ Attestations include `attested_at` and `expires_at` timestamps. Agents SHOULD tr
 
 ### Merchant Impersonation and Attestation Replay
 
-A fraudster operating an impersonation domain MAY copy a legitimate merchant's `disclose.json` verbatim, including any attested signals. The `merchant_domain` field requirement (see Domain Binding) invalidates copied documents where the field is present and correctly set. However, agents MUST NOT rely solely on the `merchant_domain` field as fraud protection — DNS-level verification that the serving domain is the legitimate merchant domain is a TLS and network concern outside the scope of this framework.
+A fraudster operating an impersonation domain MAY copy a legitimate merchant's disclosure document verbatim, including any attested signals. The `merchant_domain` field requirement (see Domain Binding) invalidates copied documents where the field is present and correctly set. However, agents MUST NOT rely solely on the `merchant_domain` field as fraud protection — DNS-level verification that the serving domain is the legitimate merchant domain is a TLS and network concern outside the scope of this framework.
 
 The primary defense against attestation replay is the domain-binding requirement in the Signatory signature payload. Signatories MUST include the merchant's canonical domain in the signed attestation payload. Copying an attestation to a different domain produces a signature that fails verification at step 5 of the Signature Verification flow above.
 
@@ -833,7 +833,7 @@ Agents SHOULD check revocation status where a Signatory publishes a revocation e
 
 ### Verification Performance
 
-Cryptographic signature verification is local computation performed against data already retrieved in the `disclose.json` fetch. It does not require an additional network request in the common case where the Signatory's public key is cached. Added latency is negligible and does not materially affect agent transaction timing. Agents SHOULD cache Signatory public keys with a refresh interval consistent with the Signatory's published key rotation policy.
+Cryptographic signature verification is local computation performed against data already retrieved in the disclosure document fetch. It does not require an additional network request in the common case where the Signatory's public key is cached. Added latency is negligible and does not materially affect agent transaction timing. Agents SHOULD cache Signatory public keys with a refresh interval consistent with the Signatory's published key rotation policy.
 
 ---
 
@@ -882,7 +882,7 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Attestation | A cryptographically signed statement from a Signatory confirming that specific disclosed attributes have been independently verified against source data |
 | Attestation Level | A field on every signal object declaring how the value was produced. One of: `none` (merchant self-reported), `computed` (derived from a platform API by a third-party tool), or `signatory` (cryptographically signed by an authorized Signatory). Agents SHOULD use this as the primary signal weighting input. |
 | Benchmark Reference | An optional object within a Signatory attestation providing vertical or category-level signal distributions (p50, p90) derived from the Signatory's merchant portfolio. Intended to give agents interpretive context for attested values. Supported verticals are not enumerated in this version of the specification — Signatories use free-form category labels. See [Signatory Benchmarks](#signatory-benchmarks). |
-| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose.json` |
+| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose` |
 | Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
 | Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate |
 | Item | The product or service being transacted. Maps to `schema:ItemOffered`, the schema.org parent type that encompasses both physical goods (`schema:Product`) and services (`schema:Service`). Signals published at Item scope reflect attributes intrinsic to the item itself — such as manufacturer warranty terms, safety recall status, or authorized reseller eligibility — independent of any specific Merchant or Offer. Using `schema:ItemOffered` as the base type ensures the framework applies equally to physical goods, home services, B2B, and digital products. |
