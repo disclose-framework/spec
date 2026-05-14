@@ -815,7 +815,9 @@ The Signatory Registry is the canonical list of authorized Disclose Signatories.
 
 ### Registry Discovery
 
-The Signatory Registry is published and maintained by the Disclose Framework governing body at:
+During the maintainer-led phase, the Signatory Registry is published and maintained through the Disclose Framework repository. Once a formal working group, foundation, or standards body is established, registry authority is expected to transition to that governance body.
+
+The registry is available at:
 
 ```
 https://discloseframework.dev/registry/signatories.json
@@ -1121,6 +1123,57 @@ Agents SHOULD check revocation status where a Signatory publishes a revocation e
 ### Verification Performance
 
 Cryptographic signature verification is local computation performed against data already retrieved in the disclosure document fetch. It does not require an additional network request in the common case where the Signatory's public key is cached. Added latency is negligible and does not materially affect agent transaction timing. Agents SHOULD cache Signatory public keys with a refresh interval consistent with the Signatory's published key rotation policy.
+
+## Governance Status
+
+Disclose is currently published as the Disclose Framework, not the Disclose Protocol. This distinction is intentional.
+
+The Framework is maintainer-led during early development while the Core Commerce Profile, reference implementations, merchant publishing model, agent consumption model, and Signatory model are validated through implementation. Protocol governance should be earned by implementation, not declared before adoption.
+
+The Framework is intended to graduate into the Disclose Protocol once there is sufficient participation from merchants, agent developers, commerce platforms, infrastructure providers, and Signatories to support neutral working group governance.
+
+During the maintainer-led phase, all material governance actions SHOULD be conducted publicly through the Disclose Framework repository. This includes specification updates, methodology changes, Signatory applications, registry additions, registry suspensions, registry revocations, and material changes to reference implementations.
+
+The maintainer-led phase is transitional. It exists to validate the standard, establish the Core Commerce Profile, prove that agents can consume merchant operating signals, onboard early merchant publishers, and develop the Signatory Registry model before formal protocol governance is introduced.
+
+### Future Working Group
+
+A future Disclose Working Group is expected to govern:
+
+- Core Profile changes
+- Attribute definitions
+- Methodology versions
+- Signatory authorization rules
+- Signatory Registry admission, suspension, and revocation rules
+- Signing key rotation and revocation standards
+- Extension approval
+- Conformance and validation requirements
+- Future protocol releases
+
+The working group SHOULD include representation from multiple participant classes, including merchants, agent developers, commerce platforms, infrastructure providers, Signatories, and independent technical contributors.
+
+No single merchant, platform, Signatory, agent provider, or commercial implementation SHOULD control the standard.
+
+### Governance Principles
+
+Disclose governance SHOULD follow these principles:
+
+- Public process for material changes
+- Attribute-level Signatory authorization rather than broad institutional approval
+- Published methodology requirements for each authorized signal
+- Clear separation between signal publication, signal attestation, and agent interpretation
+- Appeal path for Signatory suspension or revocation
+- Separation between commercial implementations and protocol governance
+- Preservation of merchant sovereignty and selective disclosure
+- No framework-assigned scores, badges, rankings, certifications, or recommendations
+
+### Maintainer-Led Registry Operations
+
+During the maintainer-led phase, the Signatory Registry is maintained through the Disclose Framework repository. Once a formal working group, foundation, or standards body is established, registry authority is expected to transition to that governance body.
+
+Signatory approval is attribute-scoped. A Signatory MAY be authorized for one attribute, a group of attributes, or a methodology version. Signatory approval MUST NOT be interpreted as general certification of the Signatory or of any merchant.
+
+Registry decisions SHOULD be public, scoped, and appealable. Agents SHOULD rely on the registry only to determine whether a Signatory is authorized to attest specific signals under specific methodology versions. The registry does not determine whether a merchant is reliable, preferred, trustworthy, or safe.
 
 ## Agent Consumption Guidelines
 
