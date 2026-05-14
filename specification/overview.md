@@ -1,6 +1,7 @@
 # Disclose Framework Official Specification
 
-**Draft version:** 0.3
+**Status:** Draft  
+**Version:** 0.3
 
 ## Overview
 
