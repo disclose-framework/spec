@@ -1,16 +1,22 @@
 # Disclose Framework
 
-Open-source transparency infrastructure for agentic commerce.
+Open-source confidence infrastructure for agentic commerce.
 
-Disclose is an open standard that enables merchants to publish verified, machine-readable disclosures about their business practices — and enables AI agents to consume those disclosures when making or informing purchasing decisions on behalf of buyers.
+Disclose is an open standard that enables merchants to publish machine-readable operating signals from their own domain, so AI agents can evaluate where to buy before checkout.
+
+Disclose does not certify merchants. It does not produce scores, badges, rankings, or recommendations. Merchants publish operating evidence. Signatories may attest specific signals within authorized scope. Agents decide what the signals mean.
 
 ---
 
 ## The Problem
 
-AI agents are increasingly acting as intermediaries between buyers and merchants — researching products, comparing options, and making purchasing recommendations autonomously. Before an agent can responsibly recommend where to buy, it needs to evaluate merchants on operational behaviour: not just price and product, but reliability, trustworthiness, and risk.
+AI agents are increasingly acting as intermediaries between buyers and merchants: researching products, comparing options, and making or informing purchasing decisions.
 
-Today, no standard exists for merchants to publish this data in a way agents can trust and consume. Agents are flying blind on merchant quality. Disclose solves this.
+Agents can already read the marketing layer: product descriptions, prices, reviews, availability, and checkout options. They have far less structured access to the operating layer: returns, fulfillment, refunds, delivery reliability, payment risk, seller tenure, and support outcomes.
+
+Without a standard way to publish those signals, agents are forced to infer merchant reliability from incomplete or inconsistent sources.
+
+Disclose gives merchants a standard way to expose operational evidence before the transaction.
 
 ---
 
@@ -18,20 +24,127 @@ Today, no standard exists for merchants to publish this data in a way agents can
 
 Disclose defines three participants:
 
-- **Merchants** publish a structured disclosure document at `/.well-known/disclose` on their own domain
-- **Signatories** — authorized third parties with direct access to source data — cryptographically sign attestations confirming the accuracy of specific signals
-- **Agents** query disclosure documents, read attestation levels, and use the signals to inform purchasing decisions
+- **Merchants** publish a structured disclosure document at `/.well-known/disclose` on their own domain.
+- **Signatories** are authorized third parties that can cryptographically attest to specific signals within their approved scope.
+- **Agents** query disclosure documents, read attestation levels, evaluate freshness and provenance, and use the signals according to their own policies.
 
-The flow is asynchronous and cacheable. Merchants publish; Signatories attest; agents consume. No centralized authority. No real-time negotiation required.
+The flow is asynchronous and cacheable:
 
-Trust is not assigned by the framework. It emerges from visible, verifiable merchant behaviour.
+```text
+Merchant publishes → Signatory attests → Agent consumes → Agent decides
+```
+
+No centralized merchant score. No platform lock-in. No real-time negotiation required.
+
 ![Discovery path](discovery-path.svg)
 
 ---
 
-## What Merchants Disclose
+## Core Commerce Profile
 
-Disclose defines a standard attribute set across 12 signal categories covering the core dimensions an agent must evaluate before recommending a purchase:
+The first standard profile is the **Core Commerce Profile v0.1**.
+
+It defines seven operating signals that are broadly useful before an agent recommends where to buy:
+
+| Core Signal | What it helps agents evaluate |
+|---|---|
+| `disclose:product_return_rate` | How often shipped units are returned |
+| `disclose:on_time_shipment_rate` | Whether orders leave within the stated fulfillment window |
+| `disclose:refund_processing_time_median_days` | How quickly refunds are completed after return receipt |
+| `disclose:chargeback_rate` | Payment dispute risk as a proportion of transactions |
+| `disclose:dispute_win_rate` | Context for dispute quality and merchant-side transaction integrity |
+| `disclose:platform_seller_tenure_days` | How long the merchant has operated on its primary commerce platform |
+| `disclose:order_accuracy_rate` | Whether orders are fulfilled without incorrect or damaged items |
+
+Merchants may publish any subset of the Core Commerce signals. A merchant can publish 1/7, 6/7, or 7/7 and remain conformant if every published signal follows the required methodology and metadata rules.
+
+Core coverage is descriptive only. It is not a score, badge, ranking, certification, endorsement, or recommendation.
+
+---
+
+## Signal Freshness
+
+Core Commerce signals represent a **trailing 90-day observation window**.
+
+Automated Core Commerce disclosures SHOULD refresh daily. Each automated Core signal includes freshness metadata such as:
+
+- `generated_at`
+- `window_start`
+- `window_end`
+- `observation_window_days`
+- `refresh_frequency`
+- `next_expected_refresh`, where available
+
+Manual snapshots may be used for testing, validation, onboarding, or demonstration. They must be clearly declared as manual snapshots and must not imply daily refresh.
+
+---
+
+## Attestation Levels
+
+Every signal carries an `attestation_level`:
+
+| Level | Meaning |
+|---|---|
+| `none` | Merchant-reported. No third-party computation or signature. |
+| `computed` | Derived from a platform API and calculated by a third-party tool, but not cryptographically signed. |
+| `signatory` | Cryptographically signed by an authorized Signatory for that specific signal. |
+
+Agents SHOULD treat the attestation level as an important input when evaluating a signal. Disclose does not define how agents should weight signals or combine them.
+
+---
+
+## Quick Start
+
+A minimal computed disclosure document can contain a single Core Commerce signal:
+
+```json
+{
+  "disclose_version": "0.3",
+  "merchant_domain": "merchant.example.com",
+  "channel_scope": "dtc",
+  "publication_mode": "automated",
+  "issued_at": "2026-05-29T00:00:00Z",
+  "expires_at": "2026-05-31T00:00:00Z",
+  "core_profile": {
+    "name": "core-commerce",
+    "version": "0.1",
+    "signals_defined": 7,
+    "signals_disclosed": 1
+  },
+  "attributes": {
+    "disclose:on_time_shipment_rate": {
+      "value": 0.95,
+      "unit": "ratio",
+      "observation_window_days": 90,
+      "window_start": "2026-03-01",
+      "window_end": "2026-05-29",
+      "generated_at": "2026-05-29T00:00:00Z",
+      "refresh_frequency": "daily",
+      "next_expected_refresh": "2026-05-30T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "merchant",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
+      "attestation": null
+    }
+  }
+}
+```
+
+Publish this at:
+
+```text
+https://merchant.example.com/.well-known/disclose
+```
+
+Agents check this canonical path first. Hosted storefronts that cannot publish to `/.well-known/` may use the supported fallbacks described in the specification.
+
+---
+
+## Broader Attribute Library
+
+Beyond the Core Commerce Profile, Disclose defines a broader optional attribute library across 12 categories:
 
 | Signal Category | Example Attributes |
 |---|---|
@@ -48,69 +161,19 @@ Disclose defines a standard attribute set across 12 signal categories covering t
 | Identity & Legitimacy | Business registration, domain age, platform seller tenure |
 | Review Signals | Rating, verified purchase rate, recency, review platform |
 
-Every metric is time-bounded, behaviour-based, and grounded in recorded outcomes — not assertions. Merchants disclose what happened, not what they claim.
-
-61 signals across 12 categories. All optional. All machine-readable.
+These attributes are optional and may be formalized into additional profiles over time.
 
 ---
 
 ## Core Principles
 
-- **Merchant sovereignty** — participation is voluntary; merchants choose what to disclose, which Signatories to authorize, and when disclosures are updated or removed
-- **Selective disclosure** — no all-or-nothing requirement; start with one attribute and add more over time
-- **No scores, no badges** — Disclose publishes facts; agents and buyers draw their own conclusions
-- **Three attestation tiers** — every signal carries an `attestation_level` of `none` (merchant self-reported), `computed` (pulled from a platform API and calculated by a third-party tool), or `signatory` (cryptographically signed by a Signatory with direct data access). Agents weight signals accordingly
-- **Manipulation-resistant by design** — raw, time-bounded, Signatory-attested metrics are far harder to game than scores or badges, which create targets
-- **Credentialed query (forthcoming)** — merchants may signal willingness to share non-public attributes with verified agents; a formal query extension is anticipated in a future version
-
----
-
-## Quick Start
-
-A minimal disclosure document looks like this:
-
-```json
-{
-  "disclose_version": "0.2",
-  "merchant_domain": "merchant.example.com",
-  "issued_at": "2026-02-24T00:00:00Z",
-  "expires_at": "2026-05-24T00:00:00Z",
-  "attributes": {
-    "disclose:repeat_purchase_rate": {
-      "value": 0.38,
-      "observation_window_days": 90,
-      "reported_by": "merchant",
-      "attestation_level": "none",
-      "attestation": null
-    },
-    "disclose:product_return_rate": {
-      "value": 0.06,
-      "observation_window_days": 90,
-      "source": "shopify_api",
-      "reported_by": "merchant",
-      "computed_by": "sure_signal",
-      "attestation_level": "computed",
-      "attestation": null
-    },
-    "disclose:on_time_shipment_rate": {
-      "value": 0.97,
-      "observation_window_days": 90,
-      "source": "loop_returns",
-      "reported_by": "loop_returns",
-      "computed_by": "loop_returns",
-      "attestation_level": "signatory",
-      "attestation": {
-        "signatory": "loop_returns",
-        "signatory_url": "https://loopreturns.com",
-        "signed_at": "2026-02-24T00:00:00Z",
-        "signature": "abc123..."
-      }
-    }
-  }
-}
-```
-
-Publish this at `/.well-known/disclose` on your domain. That's a valid Disclose implementation.
+- **Merchant sovereignty**: participation is voluntary; merchants choose what to expose, which Signatories to authorize, and when disclosures are updated or removed.
+- **Selective disclosure**: Disclose standardizes how a signal is expressed, not whether a merchant must expose it.
+- **No scores, no badges, no rankings**: Disclose publishes structured evidence. Agents decide what the signals mean.
+- **Source clarity**: signals distinguish source of record, computed publisher, attestation level, methodology version, and freshness.
+- **Authorized attestation**: Signatories attest only specific signals within authorized scope.
+- **Agent discretion**: agents may use Disclose signals in their own recommendation logic, but Disclose itself does not recommend merchants.
+- **Credentialed query, forthcoming**: future extensions may define how verified agents request non-public attributes directly from merchant infrastructure.
 
 ---
 
@@ -118,9 +181,10 @@ Publish this at `/.well-known/disclose` on your domain. That's a valid Disclose 
 
 | Document | Description |
 |---|---|
-| [Specification](specification/overview.md) | Full specification: schema, attributes, attestations, Signatory registry, governance, security, and versioning |
+| [Getting Started](specification/getting-started.md) | Quick start guide for publishing a first disclosure document |
+| [Specification](specification/overview.md) | Full specification: schema, Core Commerce Profile, attributes, sources, attestations, Signatory registry, governance, security, and versioning |
 
-This is a v0.2 draft. The specification is open for review and comment.
+This is a v0.3 draft. The specification is open for review and comment.
 
 ---
 
@@ -128,30 +192,56 @@ This is a v0.2 draft. The specification is open for review and comment.
 
 This specification is in active development. Current priorities:
 
-**Signatories** — Platforms with direct access to merchant operational data (returns processors, fulfillment providers, post-purchase platforms, payment processors) interested in becoming authorized Signatories. Signatories are listed in the public registry and cryptographically sign attestations for the signals they are authorized to confirm. [See the Signatory Registry governance process →](specification/overview.md#registry-governance)
+**Core Commerce Profile**  
+Finalize the first seven operating signals, methodology definitions, freshness rules, and validation requirements.
 
-**Agent platform partners** — AI agent developers and commerce platforms interested in consuming Disclose signals to inform purchasing recommendations.
+**Signatories**  
+Identify platforms with direct access to merchant operational data, including returns processors, fulfillment providers, post-purchase platforms, payment processors, review platforms, and commerce platforms. Signatories are listed in the public registry and may attest only the signals they are authorized to confirm.
 
-**Feedback** — Open an Issue with questions, corrections, or proposals. This is an open standard and early input shapes the direction.
+**Agent platform partners**  
+Work with AI agent developers, shopping agents, MCP servers, and commerce platforms interested in consuming Disclose signals before recommending where to buy.
+
+**Reference tooling**  
+Maintain a JSON schema, validator, sample disclosure documents, and mock Signatory implementation.
+
+**Governance path**  
+Disclose is currently maintained as an open framework. It is intended to graduate into a protocol governed by a credible working group once there is sufficient participation from merchants, agents, platforms, and Signatories.
 
 ---
 
 ## Why Now
 
-The shift to agentic commerce is happening faster than the trust infrastructure needed to support it. OpenAI, Google, Meta, and Anthropic are each building commerce layers into their agent platforms. The question of how agents evaluate merchant trustworthiness is unsolved and urgent. Disclose is designed to be the answer — vendor-neutral, open-source, and built for the infrastructure layer, not the application layer.
+Agentic commerce is moving faster than the infrastructure needed to support merchant evaluation.
+
+Checkout and payment protocols can help agents transact. Disclose addresses the step before checkout: giving agents structured merchant operating signals so they can evaluate where to buy.
+
+The goal is vendor-neutral, open-source infrastructure for the agent layer.
 
 ---
 
 ## Contributing
 
-Feedback, corrections, and proposals are welcome via Issues. This is an open standard. The goal is broad adoption, not ownership.
+Feedback, corrections, and proposals are welcome via Issues.
+
+Useful contributions include:
+
+- methodology improvements for Core Commerce signals
+- example disclosure documents
+- parser and validator feedback
+- Signatory registry proposals
+- agent consumption guidance
+- governance and working group proposals
+
+This is an open standard. The goal is broad adoption, not ownership.
 
 ---
 
 ## Authors & Maintenance
-* **Daniel Whitefield** - *Initial Work / Founder* - [danielwhitefield](https://github.com/danielwhitefield)
+
+- **Daniel Whitefield** - Initial work / Founder - [danielwhitefield](https://github.com/danielwhitefield)
 
 ---
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
