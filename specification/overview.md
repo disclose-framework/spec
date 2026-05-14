@@ -1176,9 +1176,35 @@ The maintainer-led phase is transitional. It exists to validate the standard, es
 
 During the maintainer-led phase, proposed material changes SHOULD be submitted as GitHub Issues or Pull Requests. The maintainer SHOULD allow a public comment period for material changes before adoption, except for urgent security or correctness fixes.
 
-Material changes include changes to required fields, Core Commerce methodology, Signatory authorization rules, registry status, signature verification requirements, conformance requirements, and reference validator behaviour.
+Material changes include changes to required fields, Core Commerce methodology, Signatory authorization rules, registry status, signature verification requirements, conformance requirements, reference validator behaviour, and changes that could materially advantage a commercial implementation operated by the maintainer or an affiliated entity.
 
 The maintainer SHOULD publish the rationale for accepting or rejecting material changes. This decision process is transitional and is expected to be replaced by working group governance once the Disclose Protocol is formed.
+
+### Transition to Working Group Governance
+
+The maintainer-led phase is intended to be temporary. A transition to working group governance SHOULD begin once the Framework demonstrates meaningful multi-party adoption or once continued maintainer-led control would create a credible risk of commercial capture.
+
+Transition review SHOULD be initiated when at least two of the following conditions are met:
+
+- Three or more independent merchant publishers are live with conforming disclosure documents.
+- Two or more independent agent consumers have implemented Disclose parsing, validation, or consumption logic.
+- Two or more prospective Signatories have submitted public applications or methodology proposals.
+- One or more commerce platforms, payment processors, returns platforms, fulfillment providers, review platforms, or other infrastructure providers has proposed support for a Core Commerce signal.
+- A material specification change would affect the commercial position of any implementation operated by the maintainer or an affiliated entity.
+
+Any participant MAY request transition review by opening a public GitHub Issue identifying the trigger condition or governance concern. During transition review, material changes to Core Commerce signal definitions, methodology requirements, Signatory authorization rules, registry admission criteria, conformance classes, or reference validator behaviour SHOULD be subject to public review before adoption.
+
+The maintainer SHOULD publish a transition plan describing the proposed working group composition, decision process, scope of authority, and registry handoff process. Until a working group is formed, the maintainer remains responsible for repository operations, security fixes, and registry maintenance, subject to the public process described in this section.
+
+### Commercial Neutrality and Affiliated Implementations
+
+The Disclose Framework may have commercial implementations, including products operated by Disclose Labs or affiliated entities. These implementations do not define conformance and receive no privileged status under the specification.
+
+All implementations, including Sure Signal or any other Disclose Labs product, MUST conform to the same schema, methodology, freshness, validation, and registry rules as any third-party implementation.
+
+Disclose Labs may maintain commercial implementations of the Framework, but those implementations do not control the Framework, the Core Commerce Profile, the Signatory Registry, or the definition of Disclose compatibility.
+
+The maintainer MUST publicly disclose any commercial implementation, affiliated entity, or material commercial interest that may benefit from a proposed material change. Material changes that could advantage an affiliated commercial implementation SHOULD be reviewed publicly before adoption.
 
 ### Future Working Group
 
@@ -1221,7 +1247,30 @@ Registry decisions SHOULD be public, scoped, and appealable. Agents SHOULD rely 
 
 ## Agent Consumption Guidelines
 
-Agents consuming Disclose data operate with significant discretion. The framework does not mandate how agents weight or surface disclosure signals. This is intentionally left to the platform and agent developer. The following requirements and recommendations preserve the framework's neutrality:
+Agents consuming Disclose data operate with significant discretion. The framework does not mandate how agents weight or surface disclosure signals. This is intentionally left to the platform and agent developer.
+
+### What Changes When Disclose Is Present
+
+Disclose data gives agents structured operating evidence before checkout. When present, fresh, and valid, these signals allow agents to evaluate merchant operations alongside product, price, availability, reviews, buyer preferences, and platform policy.
+
+Disclose does not require agents to prefer merchants with disclosure documents. It allows agents to distinguish between merchants using disclosed operating evidence that is structured, time-bounded, source-declared, and, where applicable, Signatory-attested.
+
+When Disclose data is absent, agents MAY continue using other available signals, including product data, price, availability, reviews, brand familiarity, platform policies, and buyer preferences. Absence has no protocol-defined meaning. The Framework does not define absence as positive or negative.
+
+The intended difference is that agents can make better-supported recommendations when disclosed operating signals are available, not that Disclose assigns a merchant verdict.
+
+In practice, Disclose enables agents to:
+
+- evaluate merchant operations before checkout, not only after buyer complaints occur;
+- distinguish merchant-reported, computed, and Signatory-attested signals;
+- compare operating signals across merchants using shared field definitions and methodology versions;
+- detect stale, incomplete, unauthenticated, or out-of-scope disclosures;
+- explain recommendation inputs to buyers without relying on opaque merchant scores;
+- route buyers toward merchants whose disclosed operating evidence aligns with buyer context, such as delivery sensitivity, refund sensitivity, payment-risk sensitivity, support needs, or preference for established sellers.
+
+### Requirements and Recommendations
+
+The following requirements and recommendations preserve the Framework's neutrality:
 
 - Agents MUST NOT represent Core coverage as a score, badge, ranking, certification, endorsement, or recommendation.
 - Agents MUST NOT assume an absent Core signal indicates poor merchant performance, merchant concealment, or non-compliance.
