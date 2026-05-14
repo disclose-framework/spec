@@ -5,7 +5,7 @@
 
 ## Overview
 
-The Disclose Framework is an open standard for merchant disclosure attestations designed for the emerging era of agentic commerce. As AI agents increasingly act as intermediaries between buyers and merchants, researching products, comparing options, and making or informing purchasing recommendations, they require structured, machine-readable, and verifiable information about merchant practices before they can responsibly evaluate where to buy.
+The Disclose Framework is an open standard for merchant operating disclosures and attestations designed for the emerging era of agentic commerce. As AI agents increasingly act as intermediaries between buyers and merchants, researching products, comparing options, and making or informing purchasing recommendations, they require structured, machine-readable, and verifiable information about merchant practices before they can responsibly evaluate where to buy.
 
 Disclose provides that infrastructure layer. It enables AI agents, platforms, and automated systems to access machine-readable information about merchant practices, including returns, fulfillment performance, refund processing, payment risk, seller tenure, review authenticity, and other operational signals, when making or informing purchasing decisions on behalf of buyers.
 
@@ -133,23 +133,27 @@ Merchants MAY expose any subset of the Core Commerce signal set. A disclosure do
 
 Core coverage is descriptive only. It indicates how many defined Core Commerce signals are present in a disclosure document. Core coverage MUST NOT be represented as a merchant score, badge, ranking, certification, endorsement, or recommendation.
 
-All Core Commerce signals MUST use a trailing 90-day observation window unless a future Core Commerce Profile version explicitly defines a different window. Automated Core Commerce disclosures SHOULD refresh daily.
+Time-bounded Core Commerce signals MUST use a trailing 90-day observation window unless a future Core Commerce Profile version explicitly defines a different window. Automated Core Commerce disclosures SHOULD refresh daily.
 
-Each published Core Commerce signal MUST include:
+Each published Core Commerce signal, including non-time-bounded Core signals, MUST include:
 
 - `value`
-- `observation_window_days`
-- `window_start`
-- `window_end`
 - `generated_at`
 - `attestation_level`
 - `methodology_version`
+
+Each published time-bounded Core Commerce signal MUST also include:
+
+- `observation_window_days`
+- `window_start`
+- `window_end`
 
 Each published Core Commerce signal SHOULD include:
 
 - `source_of_record`
 - `computed_by`, when a third-party tool or service computed the signal
 - `next_expected_refresh`, when the signal is produced by an automated publisher
+- `sample_size_band`, when the signal is a rate or ratio and the publisher can safely disclose a qualifying volume band
 
 Publishers MAY include optional `signal_status` metadata to explain why a Core signal is not disclosed. Signal status metadata is informational and is intended to reduce ambiguity for agent consumers. It is not required for conformance.
 
@@ -206,7 +210,9 @@ An Offer-scoped signal takes precedence over a Merchant-scoped signal for the sa
 
 ### Scope in the Disclosure Document
 
-Offer-scoped and Item-scoped signals are published within the same `/.well-known/disclose` document. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
+The canonical `/.well-known/disclose` document uses the top-level disclosure document structure defined in [Disclosure Document Structure](#disclosure-document-structure). JSON-LD examples in this section illustrate how scoped signals may map to schema.org contexts. A future version may define a fully JSON-LD-native serialization profile.
+
+Offer-scoped and Item-scoped signals may be represented within the same `/.well-known/disclose` document or in a future JSON-LD serialization profile. They are distinguished from Merchant-scoped signals by their node context using JSON-LD:
 
 ```json
 {
@@ -361,6 +367,7 @@ All disclosure attributes exist in the `disclose:` namespace. Each attribute is 
 | `computed_by` | string | Required for `computed` | Tool or service that computed the value, for example `sure_signal`. |
 | `attestation_level` | string | Yes | One of: `none`, `computed`, `signatory`. |
 | `methodology_version` | string | For Core signals | Methodology used to calculate the signal, for example `core-commerce-v0.1`. |
+| `sample_size_band` | string | Recommended for rate metrics | Qualifying event count band, for example `100-500`, `500-1000`, or `1000-5000`. Exact sample size MAY be omitted to avoid exposing precise transaction volume. |
 | `attestation` | object or null | Yes | Null for `none` and `computed` tiers. Signatory attestation object for `signatory` tier. |
 
 Agents MUST ignore unknown fields without error.
@@ -418,12 +425,15 @@ For each published Core Commerce signal, the methodology MUST define:
 
 The seven Core Commerce signals in v0.1 use `methodology_version: "core-commerce-v0.1"`.
 
+Publishers SHOULD suppress a Core signal or mark it with `signal_status: "insufficient_volume"` where the qualifying sample size is too small to support reliable interpretation or where publication could expose commercially sensitive or re-identifiable behaviour. Until profile-specific thresholds are defined, publishers SHOULD declare the sample size basis or suppression rule used. When safe, publishers SHOULD include `sample_size_band` rather than exact transaction counts.
+
 #### `disclose:product_return_rate`
 
 - **Definition:** Rate of units returned during the trailing 90-day observation window.
 - **Numerator:** Returned units, including returnless refunds where no item is physically returned.
 - **Denominator:** Shipped units during the same observation window.
 - **Exclusions:** Test orders, cancelled orders never shipped, duplicate orders, and exchanges where the buyer selected a replacement item without a refund.
+- **Minimum sample guidance:** Publishers SHOULD suppress or mark as `insufficient_volume` when shipped-unit volume is too low to support reliable interpretation.
 - **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
 
 #### `disclose:on_time_shipment_rate`
@@ -432,6 +442,7 @@ The seven Core Commerce signals in v0.1 use `methodology_version: "core-commerce
 - **Numerator:** Orders shipped on or before the promised fulfillment deadline.
 - **Denominator:** Orders requiring shipment during the same observation window.
 - **Exclusions:** Cancelled orders, digital-only orders, test orders, and orders delayed by buyer action.
+- **Minimum sample guidance:** Publishers SHOULD suppress or mark as `insufficient_volume` when qualifying shipment volume is too low to support reliable interpretation.
 - **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
 
 #### `disclose:refund_processing_time_median_days`
@@ -439,22 +450,27 @@ The seven Core Commerce signals in v0.1 use `methodology_version: "core-commerce
 - **Definition:** Median business days from receipt of returned item at the merchant's return facility to refund completion during the trailing 90-day observation window.
 - **Numerator/denominator:** Not a ratio. Calculated across qualifying refund events.
 - **Exclusions:** Returnless refunds, refunds initiated before item receipt, test orders, and refunds blocked by buyer payment method or external processor delay where known.
+- **Minimum sample guidance:** Publishers SHOULD suppress or mark as `insufficient_volume` when qualifying refund volume is too low to support reliable interpretation.
 - **Rounding:** Decimal days rounded to one decimal place unless a publisher declares greater precision.
 
 #### `disclose:chargeback_rate`
 
 - **Definition:** Chargebacks as a proportion of completed transactions during the trailing 90-day observation window.
-- **Numerator:** Chargeback events associated with completed transactions in the observation window.
-- **Denominator:** Completed transactions in the same observation window.
-- **Exclusions:** Test transactions, voided authorizations, and cancelled transactions never captured.
+- **Numerator:** Chargeback events created during the observation window, unless the publisher declares another basis.
+- **Denominator:** Completed transactions captured during the same observation window.
+- **Exclusions:** Test transactions, voided authorizations, cancelled transactions never captured, and non-payment disputes not represented as chargebacks by the source of record.
+- **Basis declaration:** Publishers MUST declare if chargebacks are counted by transaction date, chargeback creation date, dispute creation date, or another processor-defined basis. The recommended basis is chargeback creation date.
+- **Minimum sample guidance:** Publishers SHOULD suppress or mark as `insufficient_volume` when completed-transaction volume is too low to support reliable interpretation.
 - **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
 
 #### `disclose:dispute_win_rate`
 
 - **Definition:** Rate of disputed transactions resolved in the merchant's favour during the trailing 90-day observation window.
-- **Numerator:** Disputes resolved in the merchant's favour.
+- **Numerator:** Disputes resolved in the merchant's favour during the observation window.
 - **Denominator:** Disputes resolved during the same observation window.
-- **Exclusions:** Open disputes and cancelled dispute records.
+- **Exclusions:** Open disputes, cancelled dispute records, duplicate dispute records, and disputes outside the source-of-record scope.
+- **Basis declaration:** Disputes SHOULD be counted by resolution date. Publishers MUST declare if another basis is used.
+- **Minimum sample guidance:** Publishers SHOULD suppress or mark as `insufficient_volume` when resolved-dispute volume is too low to support reliable interpretation.
 - **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
 
 #### `disclose:platform_seller_tenure_days`
@@ -470,6 +486,7 @@ The seven Core Commerce signals in v0.1 use `methodology_version: "core-commerce
 - **Numerator:** Orders with no known incorrect item or damaged item event.
 - **Denominator:** Fulfilled orders during the same observation window.
 - **Exclusions:** Cancelled orders, test orders, digital-only orders, and orders without sufficient fulfillment data.
+- **Minimum sample guidance:** Publishers SHOULD suppress or mark as `insufficient_volume` when fulfilled-order volume is too low to support reliable interpretation.
 - **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
 
 ### 1. Product Quality
@@ -539,7 +556,7 @@ Signals about whether products are actually available when an agent attempts to 
 | `disclose:in_stock_rate` | decimal | Rate at which listed products are in stock at the time of order placement (0–1), measured across all active SKUs within the observation window. |
 | `disclose:stockout_frequency_rate` | decimal | Rate of active SKUs that experienced at least one stockout during the observation window (0–1). |
 | `disclose:backorder_rate` | decimal | Proportion of orders placed against backordered inventory (0–1). Agents SHOULD surface this to buyers who have expressed time-sensitivity. |
-| `disclose:inventory_accuracy_rate` | decimal | Rate at which displayed inventory levels match actual warehouse counts at the time of order (0–1). Mismatches result in post-order cancellations - a significant buyer trust failure. |
+| `disclose:inventory_accuracy_rate` | decimal | Rate at which displayed inventory levels match actual warehouse counts at the time of order (0–1). Mismatches result in post-order cancellations - a significant buyer experience failure. |
 | `disclose:pre_order_fulfillment_rate` | decimal | For merchants who accept pre-orders: rate of pre-orders fulfilled on or before the stated availability date (0–1). Omit if the merchant does not offer pre-orders. |
 
 ---
@@ -564,10 +581,18 @@ Signals about transaction integrity and payment reliability. Agents handling aut
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `disclose:chargeback_rate` | decimal | Chargebacks as a proportion of total transactions (0–1) |
+| `disclose:chargeback_rate` | decimal | Chargebacks as a proportion of completed transactions (0–1). Publishers SHOULD declare the counting basis used. |
 | `disclose:dispute_win_rate` | decimal | Rate of disputed transactions resolved in the merchant's favour (0–1). Provides context for chargeback rate: a merchant with low chargebacks and a high dispute win rate has a materially stronger financial risk profile. |
-| `disclose:fraud_order_rate` | decimal | Rate of orders identified as fraudulent and cancelled prior to fulfillment (0–1). Signals the merchant's fraud detection maturity and platform security posture. |
+| `disclose:fraud_order_rate` | decimal | Rate of orders identified as fraudulent and cancelled or blocked prior to fulfillment (0–1). Publishers SHOULD declare the source system or rule set used to classify fraud events. |
 | `disclose:payment_method_coverage` | array of strings | Payment methods accepted by the merchant. Recommended values: `card`, `paypal`, `apple_pay`, `google_pay`, `shop_pay`, `buy_now_pay_later`, `crypto`, `bank_transfer`. |
+
+#### Payment-Risk Methodology Guidance
+
+For `disclose:chargeback_rate`, publishers SHOULD declare whether events are counted by transaction date, chargeback creation date, dispute creation date, or another processor-defined basis. The recommended basis is chargeback creation date.
+
+For `disclose:dispute_win_rate`, disputes SHOULD be counted by resolution date. Open disputes are excluded.
+
+For `disclose:fraud_order_rate`, publishers SHOULD declare the source system or rule set used to classify fraud events. Publishers SHOULD suppress or mark the signal as `insufficient_volume` when qualifying order volume is too low to support reliable interpretation.
 
 ---
 
@@ -650,7 +675,7 @@ Signals that help agents distinguish legitimate merchants from fraudulent storef
 
 Signals derived from buyer reviews and ratings. These differ from operational metrics: they are human-assessed rather than operationally derived, and more susceptible to manipulation. Agents SHOULD weight review signals in combination with operational metrics rather than in isolation.
 
-> **Recency matters:** A merchant with 10,000 lifetime reviews but minimal recent activity has a materially different trust profile than a merchant with comparable volume and active ongoing engagement. Agents SHOULD weight `disclose:review_recency_90d_rate` and `disclose:review_recency_365d_rate` when interpreting `disclose:review_rating`.
+> **Recency matters:** A merchant with 10,000 lifetime reviews but minimal recent activity has a materially different signal profile than a merchant with comparable volume and active ongoing engagement. Agents SHOULD weight `disclose:review_recency_90d_rate` and `disclose:review_recency_365d_rate` when interpreting `disclose:review_rating`.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
@@ -1125,6 +1150,16 @@ Agents SHOULD check revocation status where a Signatory publishes a revocation e
 
 Cryptographic signature verification is local computation performed against data already retrieved in the disclosure document fetch. It does not require an additional network request in the common case where the Signatory's public key is cached. Added latency is negligible and does not materially affect agent transaction timing. Agents SHOULD cache Signatory public keys with a refresh interval consistent with the Signatory's published key rotation policy.
 
+## Privacy and Data Minimization
+
+Disclose is intended for aggregate merchant-level, Offer-level, or Item-level operating signals. Disclosure documents MUST NOT include customer-level, order-level, payment-card-level, or personally identifiable information.
+
+Publishers SHOULD avoid exposing metrics where low sample size could reveal individual customer behaviour or commercially sensitive transaction details. Where appropriate, publishers SHOULD suppress the signal, use `signal_status: "insufficient_volume"`, or provide `sample_size_band` instead of exact sample size.
+
+Agents and publishers SHOULD treat public Disclose documents as public web resources unless a future credentialed query extension defines authenticated access controls. Public disclosure documents SHOULD NOT contain data that requires access control, contractual confidentiality, or customer consent beyond what the publisher has authority to disclose.
+
+Signatories and computed publishers SHOULD apply data minimization principles when calculating and attesting signals. The attestation payload SHOULD contain only the fields necessary to verify the disclosed signal, its source, methodology, observation window, and freshness.
+
 ## Governance Status
 
 Disclose is currently published as the Disclose Framework, not the Disclose Protocol. This distinction is intentional.
@@ -1136,6 +1171,14 @@ The Framework is intended to graduate into the Disclose Protocol once there is s
 During the maintainer-led phase, all material governance actions SHOULD be conducted publicly through the Disclose Framework repository. This includes specification updates, methodology changes, Signatory applications, registry additions, registry suspensions, registry revocations, and material changes to reference implementations.
 
 The maintainer-led phase is transitional. It exists to validate the standard, establish the Core Commerce Profile, prove that agents can consume merchant operating signals, onboard early merchant publishers, and develop the Signatory Registry model before formal protocol governance is introduced.
+
+### Maintainer-Led Decision Process
+
+During the maintainer-led phase, proposed material changes SHOULD be submitted as GitHub Issues or Pull Requests. The maintainer SHOULD allow a public comment period for material changes before adoption, except for urgent security or correctness fixes.
+
+Material changes include changes to required fields, Core Commerce methodology, Signatory authorization rules, registry status, signature verification requirements, conformance requirements, and reference validator behaviour.
+
+The maintainer SHOULD publish the rationale for accepting or rejecting material changes. This decision process is transitional and is expected to be replaced by working group governance once the Disclose Protocol is formed.
 
 ### Future Working Group
 
@@ -1196,6 +1239,26 @@ Agents consuming Disclose data operate with significant discretion. The framewor
 
 Agents MAY use Disclose signals as inputs into their own recommendation logic, provided they do not imply that Disclose itself produced the recommendation or verdict.
 
+## Conformance Classes
+
+A conforming implementation MAY identify as one or more of the following classes:
+
+### Disclose Publisher
+
+A Disclose Publisher publishes a valid disclosure document at a supported discovery path. A Publisher MUST serve the document over HTTPS, declare `merchant_domain`, include required top-level fields, and ensure each published attribute follows the required structure for its signal type.
+
+### Disclose Computed Publisher
+
+A Disclose Computed Publisher calculates one or more signals from a source of record. A Computed Publisher MUST declare `source_of_record`, `computed_by`, `generated_at`, `attestation_level: "computed"`, and `methodology_version` where required. For automated Core Commerce disclosures, a Computed Publisher SHOULD refresh daily and SHOULD declare `next_expected_refresh`.
+
+### Disclose Signatory
+
+A Disclose Signatory is listed in the Signatory Registry and cryptographically signs signals within its authorized scope. A Signatory MUST publish signing keys, sign only authorized attributes and methodology versions, support revocation where required, and avoid representing Signatory status as merchant certification.
+
+### Disclose Agent Consumer
+
+A Disclose Agent Consumer fetches and interprets disclosure documents. An Agent Consumer MUST verify Signatory status, authorization scope, methodology version, and signature before treating a signal as Signatory-attested. Agent Consumers MUST NOT represent Core coverage or Disclose-derived outputs as Disclose scores, badges, certifications, rankings, endorsements, or recommendations.
+
 ## Reference Implementation
 
 To support adoption and validate the specification, the Disclose Framework provides the following reference resources at `https://github.com/disclose-framework/spec`:
@@ -1239,6 +1302,8 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Attestation Level | A field on every signal object declaring how the value was produced. One of: `none` (merchant self-reported), `computed` (derived from source data by a computed publisher), or `signatory` (cryptographically signed by an authorized Signatory). |
 | Automated Publisher | A publisher that generates and refreshes disclosures through an automated process. Automated Core Commerce disclosures SHOULD refresh daily. |
 | Benchmark Reference | An optional object within a Signatory attestation providing vertical or category-level signal distributions derived from the Signatory's merchant portfolio. Intended to give agents interpretive context, not a score. |
+| Conformance Class | A defined implementation role, such as Disclose Publisher, Disclose Computed Publisher, Disclose Signatory, or Disclose Agent Consumer. |
+| Data Minimization | The principle that disclosure documents and attestation payloads should include only aggregate operating signals and verification metadata necessary for agent interpretation. |
 | Computed Publisher | A tool or service that calculates disclosed signals from a source of record without cryptographic Signatory accountability, for example Sure Signal computing Shopify API-derived signals. |
 | Core Commerce Profile | The first standard Disclose profile for agentic commerce. Version 0.1 defines seven optional merchant operating signals. Merchants may disclose any subset. |
 | Core Coverage | A descriptive count of how many Core Commerce signals are present in a disclosure document. Core coverage is not a score, badge, ranking, certification, endorsement, or recommendation. |
@@ -1255,10 +1320,11 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Payment Commitment | A future extension concept for Signatory compensation. It is not part of the core attestation object in this version. |
 | Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time. |
 | Review Recency | The proportion of a merchant's total reviews submitted within a recent time window, used to assess the freshness of aggregate review ratings. |
+| Sample Size Band | A range describing qualifying event volume for a signal, such as `100-500` or `1000-5000`, used to provide reliability context without exposing exact transaction volume. |
 | Selective Disclosure | The ability to disclose specific attributes without an all-or-nothing requirement. A merchant may publish any subset of Core Commerce signals. |
 | Signal Absence | The absence of a signal from a disclosure document. Absence has no protocol-defined meaning and MUST NOT be assumed to indicate poor performance, concealment, or non-compliance. |
 | Signal Status | Optional metadata that explains why a Core signal is not disclosed, such as `not_available`, `insufficient_volume`, or `not_applicable`. |
 | Signatory | An authorized third party that cryptographically signs attestations for specific merchant signals within an approved registry scope. A Signatory is accountable for signed signals, not for agent interpretation or merchant certification. |
-| Signatory Registry | The canonical, publicly accessible list of authorized Disclose Signatories maintained by the framework governing body. |
+| Signatory Registry | The canonical, publicly accessible list of authorized Disclose Signatories. During the maintainer-led phase it is maintained through the Disclose Framework repository and is expected to transition to working group, foundation, or standards-body governance. |
 | Source of Record | The platform, API, database, or system from which the underlying data for a signal was retrieved, for example Shopify API, a payment processor, or a returns platform. |
 
