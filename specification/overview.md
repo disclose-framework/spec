@@ -1,14 +1,16 @@
-# Disclose Framework — Official Specification
+# Disclose Framework Official Specification
+
+**Draft version:** 0.3
 
 ## Overview
 
-The Disclose Framework is an open standard for merchant disclosure attestations designed for the emerging era of agentic commerce. As AI agents increasingly act as intermediaries between buyers and merchants — researching products, comparing options, and making or informing purchasing recommendations — they require structured, machine-readable, and verifiable information about merchant practices before they can responsibly recommend where to buy.
+The Disclose Framework is an open standard for merchant disclosure attestations designed for the emerging era of agentic commerce. As AI agents increasingly act as intermediaries between buyers and merchants, researching products, comparing options, and making or informing purchasing recommendations, they require structured, machine-readable, and verifiable information about merchant practices before they can responsibly evaluate where to buy.
 
-Disclose provides that infrastructure layer. It enables AI agents, platforms, and automated systems to access verified, machine-readable information about merchant practices — including return policies, fulfillment performance, review authenticity, and other behavioural signals — when making or informing purchasing decisions on behalf of buyers.
+Disclose provides that infrastructure layer. It enables AI agents, platforms, and automated systems to access machine-readable information about merchant practices, including returns, fulfillment performance, refund processing, payment risk, seller tenure, review authenticity, and other operational signals, when making or informing purchasing decisions on behalf of buyers.
 
-Disclose operates as a disclosure layer that sits below discovery and above the transaction. Before an agent decides where to buy, Disclose provides the structured signal data needed to make a confident recommendation. It does not process payments, manage checkout sessions, or execute transactions. Its sole function is to standardize how merchants publish verified disclosures and how agents consume them.
+Disclose operates as a confidence layer that sits below discovery and above the transaction. It does not generate confidence by itself. It standardizes the operational signals agents use to form confidence before recommending where to buy. Disclose does not process payments, manage checkout sessions, or execute transactions. Its sole function is to standardize how merchants publish disclosed operating signals, how publishers declare provenance and freshness, how Signatories attest specific signals, and how agents consume those signals.
 
----
+Disclose does not certify merchants. It does not produce scores, badges, tiers, rankings, or recommendations. Merchants publish operating evidence. Signatories may attest specific signals within authorized scope. Agents decide what the signals mean.
 
 ## Overarching Guidelines
 
@@ -16,35 +18,36 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RE
 
 Schema notes:
 
-- **Date format:** Always specified as RFC 3339 unless otherwise specified.
-- **Numeric values:** Expressed as decimals unless otherwise noted (e.g., 0.92 for 92%).
-- **Rates and ratios:** Always expressed as a decimal between 0 and 1 (e.g., 0.06 for 6%).
-- **Time-bounded metrics:** MUST include a `_period_days` companion field declaring the observation window. The default observation window is 90 days unless otherwise specified.
-- **Measurement methodology:** Where a metric's value depends on how it is computed, the attesting Signatory's methodology governs. Agents SHOULD consider the Signatory's stated methodology when interpreting attested values, particularly for attributes where platform definitions vary.
-
----
+- **Date format:** All timestamps MUST be expressed as RFC 3339 unless otherwise specified.
+- **Numeric values:** Numeric values are expressed as decimals unless otherwise noted, for example `0.92` for 92%.
+- **Rates and ratios:** Rates and ratios MUST be expressed as decimals between 0 and 1, for example `0.06` for 6%.
+- **Observation windows:** Core Commerce signals MUST use a trailing 90-day observation window. Each Core Commerce signal MUST include `observation_window_days`, `window_start`, and `window_end`.
+- **Daily refresh:** Automated Core Commerce disclosures SHOULD refresh daily. Each automated Core Commerce signal MUST include `generated_at` and SHOULD include `next_expected_refresh`.
+- **Manual snapshots:** Manual snapshots MAY be used for testing, validation, onboarding, or demonstration. Manual snapshots MUST declare `publication_mode: "manual_snapshot"` and MUST NOT imply daily refresh.
+- **Measurement methodology:** Each Core Commerce signal MUST include `methodology_version`. Agents SHOULD consider the methodology version, source of record, computation method, and attestation level when interpreting a signal.
+- **Unknown fields:** Agents MUST ignore unknown fields without error, provided required fields are present and valid.
 
 ## Design Philosophy
 
 ### Trust Is Emergent, Not Engineered
 
-The Disclose Framework does not produce trust scores, badges, tiers, or rankings. It produces structured, verifiable facts about merchant behaviour. Trust emerges from those facts as agents and buyers draw their own conclusions.
+The Disclose Framework does not produce trust scores, badges, tiers, rankings, certifications, or recommendations. It produces structured, verifiable facts about merchant behaviour. Trust or distrust emerges from those facts as agents and buyers draw their own conclusions.
 
 This is a deliberate architectural choice with three consequences:
 
-**Merchants disclose behaviour, not claims.** Every attribute in the Disclose schema is grounded in operational outcomes — repeat purchases, return rates, fulfillment accuracy, chargeback rates. These are things that happened, not assertions about quality or intent.
+**Merchants disclose behaviour, not claims.** Every operating attribute in the Disclose schema is grounded in operational outcomes, including returns, fulfillment accuracy, refund timing, chargeback rates, and seller tenure. These are things that happened, not assertions about quality or intent.
 
-**The framework enforces structure, not interpretation.** Disclose defines what attributes mean, how they are measured, and how they are verified. It does not define how agents should weight them, combine them, or surface them to buyers. That discretion belongs to the platform.
+**The framework enforces structure, not interpretation.** Disclose defines what attributes mean, how they are measured, how they declare provenance, and how they may be verified. It does not define how agents should weight them, combine them, or surface them to buyers. That discretion belongs to the agent or platform.
 
-**No centralized authority renders verdicts.** There is no "Disclose Score." There is no tier that grants a badge. A merchant that publishes a low return rate, high on-time shipment rate, and fast refund processing becomes intuitively trustworthy — not because a framework said so, but because the evidence is visible and verifiable.
+**No centralized authority renders verdicts.** There is no "Disclose Score." There is no tier that grants a badge. A merchant that publishes a low return rate, high on-time shipment rate, and fast refund processing gives agents more operational evidence to evaluate. The framework does not determine what conclusion the agent should draw.
 
-This philosophy also protects against gaming. Scores and badges create targets. Raw, time-bounded, Signatory-attested metrics are far harder to manipulate without changing actual operations.
+This philosophy also protects against gaming. Scores and badges create targets. Raw, time-bounded, provenance-declared, and Signatory-attested metrics are harder to manipulate without changing actual operations.
 
 ### Self-Reported Attribute Integrity
 
-Merchants MAY publish disclosures without Signatories. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. Merchants MAY declare the platform origin of self-reported attributes using the sources array. Source declarations do not constitute attestation. The framework does not currently define a formal dispute process for false self-reported disclosures; however, platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification will define a community-based flagging and review process.
+Merchants MAY publish disclosures without Signatories. Self-reported attributes carry no third-party verification and agents SHOULD treat them accordingly. Merchants MAY declare the platform origin of self-reported attributes using source metadata. Source declarations do not constitute attestation.
 
----
+The framework does not currently define a formal dispute process for false self-reported disclosures. Platforms consuming Disclose data MAY implement their own policies for flagging or deprioritizing merchants whose self-reported attributes are demonstrably inconsistent with other observable signals. A future extension to this specification may define a community-based flagging and review process.
 
 ## Core Concepts
 
@@ -62,11 +65,17 @@ Unlike transaction protocols, Disclose does not require real-time negotiation be
 
 ### Merchant Sovereignty
 
-A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which Signatories to authorize, and when disclosures are updated or removed. The framework standardizes the format and verification mechanism — not the content or extent of disclosure. By default, all signals reflect DTC performance only. Merchants with multi-channel operations can declare additional channels using channel_scope.
+A core principle of the Disclose Framework is that merchants retain full sovereignty over their disclosures. Participation is voluntary. Merchants choose which attributes to disclose, which Signatories to authorize, and when disclosures are updated or removed. The framework standardizes how a signal is expressed, not whether a merchant must expose it.
+
+By default, all merchant-scoped signals reflect DTC performance only. Merchants with multi-channel operations MAY declare additional channels using `channel_scope`.
 
 ### Selective Disclosure
 
-There is no all-or-nothing requirement. A merchant may publish a single attribute and add additional attributes over time as their business matures or as competitive incentives emerge. This progressive enhancement model lowers the barrier to participation while preserving the integrity of the standard.
+There is no all-or-nothing requirement. A merchant MAY publish a single attribute and add additional attributes over time as its business matures or as competitive incentives emerge. This progressive enhancement model lowers the barrier to participation while preserving the integrity of the standard.
+
+A merchant MAY publish any subset of Core Commerce signals, including one of seven Core signals or all seven Core signals. A disclosure document remains conformant if each published signal follows the required methodology, source, freshness, and attestation metadata rules.
+
+The absence of a Core signal has no protocol-defined meaning. Agents MUST NOT assume that an absent Core signal indicates poor merchant performance, merchant concealment, or non-compliance. Agents MAY decide how to interpret absence according to their own policies.
 
 ### Attestation Tiers
 
@@ -75,18 +84,20 @@ Every signal in a disclosure document carries an `attestation_level` field decla
 | `attestation_level` | Meaning |
 |---|---|
 | `none` | Merchant self-reported. No third-party computation or signature. Agents SHOULD weight accordingly. |
-| `computed` | Pulled from a platform API and calculated by a third-party tool (e.g., Sure Signal from Shopify API). Not cryptographically signed. Harder to manipulate than merchant-entered data, but carries no Signatory accountability. |
-| `signatory` | Cryptographically signed by an authorized Signatory with direct access to source data. The Signatory's reputation is staked on the value. |
+| `computed` | Pulled from a source system or platform API and calculated by a third-party tool or computed publisher, for example Sure Signal from Shopify API data. Not cryptographically signed. Harder to manipulate than merchant-entered data, but carries no Signatory accountability. |
+| `signatory` | Cryptographically signed by an authorized Signatory with direct access to source data or a defined verification method. The Signatory is accountable for the signed signal within its authorized scope. |
 
-Agents SHOULD use `attestation_level` as the primary signal weighting input before evaluating the value itself.
+Agents SHOULD use `attestation_level` as a primary signal weighting input before evaluating the value itself.
+
+A Signatory does not certify the merchant, require complete Core Profile coverage, or determine how agents should interpret the signal. A Signatory attests only to specified signals within its authorized scope.
 
 ### Credentialed Query (Anticipated Extension)
 
-Some merchants may hold operational signals they are willing to share with verified agents but not publish in a public disclosure document. The current specification does not define a mechanism for this. A future extension will define a credentialed query path — allowing agents with verified identity to request non-public attributes directly from a merchant's infrastructure. Merchants who wish to signal this capability in advance MAY include a disclose:credentialed_query_supported: true attribute in their public disclosure document. No further behaviour is defined for this attribute in the current version.
+Some merchants may hold operational signals they are willing to share with verified agents but not publish in a public disclosure document. The current specification does not define a mechanism for this. A future extension will define a credentialed query path - allowing agents with verified identity to request non-public attributes directly from a merchant's infrastructure. Merchants who wish to signal this capability in advance MAY include a disclose:credentialed_query_supported: true attribute in their public disclosure document. No further behaviour is defined for this attribute in the current version.
 
 ### Commerce Risk Coverage
 
-The standard attribute set is designed to address the core risks an agent must evaluate before recommending a purchase:
+The standard attribute set is designed to address the core risks an agent may evaluate before recommending a purchase:
 
 | Risk Dimension | Covered By |
 |----------------|------------|
@@ -101,11 +112,62 @@ The standard attribute set is designed to address the core risks an agent must e
 
 No single dimension dominates. Agents weight these signals according to their own risk models and buyer context.
 
----
+### Core Commerce Profile v0.1
+
+The Core Commerce Profile defines the first standard signal set for merchant operating evidence in agentic commerce. It is an optional signal set, not a mandatory checklist.
+
+The Core Commerce signal set is:
+
+| Core signal | Category | Purpose |
+|---|---|---|
+| `disclose:product_return_rate` | Product Quality | Measures returned units relative to shipped units. |
+| `disclose:on_time_shipment_rate` | Fulfillment | Measures orders shipped within the merchant's stated fulfillment window. |
+| `disclose:refund_processing_time_median_days` | Returns & Refunds | Measures median business days from return receipt to refund completion. |
+| `disclose:chargeback_rate` | Financial Risk | Measures chargebacks relative to total completed transactions. |
+| `disclose:dispute_win_rate` | Financial Risk | Measures disputed transactions resolved in the merchant's favour. |
+| `disclose:platform_seller_tenure_days` | Identity & Legitimacy | Measures days the merchant has been active on its primary commerce platform. |
+| `disclose:order_accuracy_rate` | Fulfillment | Measures orders fulfilled without incorrect or damaged items. |
+
+Merchants MAY expose any subset of the Core Commerce signal set. A disclosure document may contain one Core signal, all seven Core signals, or any subset between one and seven. Conformance depends on the validity of each published signal, not on full Core coverage.
+
+Core coverage is descriptive only. It indicates how many defined Core Commerce signals are present in a disclosure document. Core coverage MUST NOT be represented as a merchant score, badge, ranking, certification, endorsement, or recommendation.
+
+All Core Commerce signals MUST use a trailing 90-day observation window unless a future Core Commerce Profile version explicitly defines a different window. Automated Core Commerce disclosures SHOULD refresh daily.
+
+Each published Core Commerce signal MUST include:
+
+- `value`
+- `observation_window_days`
+- `window_start`
+- `window_end`
+- `generated_at`
+- `attestation_level`
+- `methodology_version`
+
+Each published Core Commerce signal SHOULD include:
+
+- `source_of_record`
+- `computed_by`, when a third-party tool or service computed the signal
+- `next_expected_refresh`, when the signal is produced by an automated publisher
+
+Publishers MAY include optional `signal_status` metadata to explain why a Core signal is not disclosed. Signal status metadata is informational and is intended to reduce ambiguity for agent consumers. It is not required for conformance.
+
+Recommended `signal_status` values for undisclosed signals are:
+
+| Status | Meaning |
+|---|---|
+| `not_disclosed` | The merchant has chosen not to expose this signal. |
+| `not_available` | The source system does not provide the data required to compute this signal. |
+| `insufficient_volume` | The signal exists in principle, but the qualifying sample size is below the methodology threshold. |
+| `not_applicable` | The signal does not apply to the merchant's business model. |
+| `expired` | The signal was previously disclosed but is no longer fresh. |
+| `error` | The signal could not be generated due to a temporary system issue. |
+
+The absence of `signal_status` has no protocol-defined meaning.
 
 ## Disclosure Scopes
 
-The Disclose Framework organizes disclosure signals across three scopes. Every `disclose:` property belongs to one or more scopes. The scope is determined by the schema.org node type to which the property is attached — no additional metadata is required.
+The Disclose Framework organizes disclosure signals across three scopes. Every `disclose:` property belongs to one or more scopes. The scope is determined by the schema.org node type to which the property is attached - no additional metadata is required.
 
 **Merchant → Offer → Item**
 
@@ -152,8 +214,16 @@ Offer-scoped and Item-scoped signals are published within the same `/.well-known
     "disclose": "https://discloseframework.dev/vocab#"
   },
   "@type": "Organization",
-  "disclose:product_return_rate": 0.07,
-  "disclose:product_return_rate_period_days": 90,
+  "disclose:product_return_rate": {
+    "value": 0.07,
+    "unit": "ratio",
+    "observation_window_days": 90,
+    "window_start": "2026-02-13T00:00:00Z",
+    "window_end": "2026-05-13T23:59:59Z",
+    "generated_at": "2026-05-14T00:00:00Z",
+    "attestation_level": "computed",
+    "methodology_version": "core-commerce-v0.1"
+  },
 
   "makesOffer": [
     {
@@ -162,17 +232,31 @@ Offer-scoped and Item-scoped signals are published within the same `/.well-known
         "@type": "Product",
         "gtin": "00012345678905"
       },
-      "disclose:product_return_rate": 0.03,
-      "disclose:product_return_rate_period_days": 90,
-      "disclose:inventory_accuracy_rate": 0.99,
-      "disclose:inventory_accuracy_rate_period_days": 90,
-      "disclose:avg_ship_days_sku": 1.4
+      "disclose:product_return_rate": {
+        "value": 0.03,
+        "unit": "ratio",
+        "observation_window_days": 90,
+        "window_start": "2026-02-13T00:00:00Z",
+        "window_end": "2026-05-13T23:59:59Z",
+        "generated_at": "2026-05-14T00:00:00Z",
+        "attestation_level": "computed",
+        "methodology_version": "core-commerce-v0.1"
+      },
+      "disclose:inventory_accuracy_rate": {
+        "value": 0.99,
+        "unit": "ratio",
+        "observation_window_days": 90,
+        "window_start": "2026-02-13T00:00:00Z",
+        "window_end": "2026-05-13T23:59:59Z",
+        "generated_at": "2026-05-14T00:00:00Z",
+        "attestation_level": "computed"
+      }
     }
   ]
 }
 ```
 
-In this example, the agent can observe that while the Merchant's overall return rate is 7%, the return rate for this specific SKU is 3% — a materially stronger signal for a purchase recommendation on this Item.
+In this example, the agent can observe that while the Merchant's overall return rate is 7%, the return rate for this specific SKU is 3% - a materially stronger signal for a purchase recommendation on this Item.
 
 ### Item-Scope Signals
 
@@ -185,7 +269,7 @@ The following attributes are particularly well-suited to Item scope, as they ref
 | `disclose:product_defect_rate` | Known defect rate for this Item across all sellers |
 | `disclose:return_policy_type` | Return policy specific to this Item (e.g., non-returnable electronics) |
 
-*The framework anticipates that dedicated Item-scope attributes — including authorized reseller status and product-level recall signals — will be formally defined in a future version of this specification.*
+*The framework anticipates that dedicated Item-scope attributes - including authorized reseller status and product-level recall signals - will be formally defined in a future version of this specification.*
 
 ---
 
@@ -213,9 +297,7 @@ Accept: application/json
 
 Agents MAY fetch the disclosure document before, during, or after capability negotiation with a merchant's commerce infrastructure. Agents SHOULD cache disclosure documents according to HTTP cache-control directives.
 
-Agents MUST NOT require a disclosure document to be present in order to complete a transaction. The absence of a disclosure document is itself a signal; agents MAY surface this to buyers or use it in ranking logic.
-
----
+Agents MUST NOT require a disclosure document to be present in order to complete a transaction. The absence of a disclosure document may be considered by agents according to their own policies. The framework does not define absence as positive or negative.
 
 ## Disclosure Document Structure
 
@@ -223,14 +305,42 @@ Agents MUST NOT require a disclosure document to be present in order to complete
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `disclose_version` | string | Yes | Specification version (e.g., `"0.2"`) |
-| `merchant_domain` | string | Yes | The canonical domain of the merchant (e.g., `"merchant.example.com"`) |
-| `issued_at` | string | Yes | RFC 3339 timestamp of when this document was generated |
-| `expires_at` | string | No | RFC 3339 timestamp after which agents SHOULD re-fetch |
-| `channel_scope` | string | No | Declares the channel(s) reflected by signals in this document. Values: `dtc`, `all_direct`, `all_channels`. Default if absent: `dtc`. |
-| `attributes` | object | Yes | Map of disclosed merchant attributes. Each attribute is an object containing `value`, `attestation_level`, and optional provenance fields. |
-| `sources` | array | No | Array of platform source objects declaring the origin of specific self-reported attributes. Source declarations do not constitute attestation. Agents MAY use source declarations to calibrate confidence in self-reported signals. |
-| `attestations` | array | No | Array of Signatory attestation objects |
+| `disclose_version` | string | Yes | Specification version, for example `"0.3"`. |
+| `merchant_domain` | string | Yes | The canonical domain of the merchant, for example `"merchant.example.com"`. |
+| `issued_at` | string | Yes | RFC 3339 timestamp of when this document was generated. |
+| `expires_at` | string | No | RFC 3339 timestamp after which agents SHOULD re-fetch. |
+| `publication_mode` | string | No | One of: `automated`, `manual_snapshot`. Default if absent: `automated`. |
+| `refresh_frequency` | string | No | Recommended value for automated Core Commerce disclosures: `daily`. Manual snapshots SHOULD use `none`. |
+| `channel_scope` | string | No | Declares the channel reflected by signals in this document. Values: `dtc`, `all_direct`, `all_channels`. Default if absent: `dtc`. |
+| `core_profile` | object | No | Metadata describing Core Commerce coverage. Required when any Core Commerce signal is present. |
+| `attributes` | object | Yes | Map of disclosed merchant attributes. Each attribute is an object containing `value`, `attestation_level`, and required metadata. |
+| `signal_status` | array | No | Optional explanatory metadata for Core signals that are not disclosed. |
+| `sources` | array | No | Array of source-of-record objects declaring the origin of specific attributes. Source declarations do not constitute attestation. |
+| `attestations` | array | No | Array of Signatory attestation objects. |
+
+### Core Profile Object
+
+The `core_profile` object is required when any Core Commerce signal is present.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes | Profile name. For this version: `core-commerce`. |
+| `version` | string | Yes | Profile version. For this version: `0.1`. |
+| `signals_defined` | integer | Yes | Number of signals defined in the Core Commerce Profile. For v0.1: `7`. |
+| `signals_disclosed` | integer | Yes | Number of Core Commerce signals present in `attributes`. |
+| `coverage_note` | string | No | Optional reminder that coverage is descriptive only and not a score. |
+
+Example:
+
+```json
+{
+  "name": "core-commerce",
+  "version": "0.1",
+  "signals_defined": 7,
+  "signals_disclosed": 6,
+  "coverage_note": "Core coverage is descriptive only and is not a score, badge, ranking, certification, endorsement, or recommendation."
+}
+```
 
 ### Attribute Namespace
 
@@ -238,21 +348,45 @@ All disclosure attributes exist in the `disclose:` namespace. Each attribute is 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `value` | varies | Yes | The signal value |
-| `observation_window_days` | integer | For time-bounded metrics | Observation window in days |
-| `reported_by` | string | Yes | Who reported this value: `merchant` or the Signatory domain |
-| `source` | string | No | Platform API the value was derived from (e.g., `shopify_api`) |
-| `computed_by` | string | No | Tool or service that computed the value (e.g., `sure_signal`) |
-| `attestation_level` | string | Yes | One of: `none`, `computed`, `signatory` |
+| `value` | varies | Yes | The signal value. |
+| `unit` | string | Recommended | Unit of measurement, for example `ratio`, `days`, `hours`, `count`, `boolean`, or `string`. |
+| `observation_window_days` | integer | For Core and other time-bounded metrics | Observation window in days. Core Commerce signals MUST use `90`. |
+| `window_start` | string | For Core signals | RFC 3339 date or timestamp marking the start of the trailing observation window. |
+| `window_end` | string | For Core signals | RFC 3339 date or timestamp marking the end of the trailing observation window. |
+| `generated_at` | string | For Core signals | RFC 3339 timestamp of when the signal was generated. |
+| `next_expected_refresh` | string | Recommended for automated Core signals | RFC 3339 timestamp of when the signal is next expected to refresh. |
+| `reported_by` | string | Yes | Who reported this value: `merchant`, a computed publisher identifier, or the Signatory domain. |
+| `source_of_record` | string | Recommended | Platform, API, or system from which the underlying data was retrieved, for example `shopify_api`. |
+| `computed_by` | string | Required for `computed` | Tool or service that computed the value, for example `sure_signal`. |
+| `attestation_level` | string | Yes | One of: `none`, `computed`, `signatory`. |
+| `methodology_version` | string | For Core signals | Methodology used to calculate the signal, for example `core-commerce-v0.1`. |
 | `attestation` | object or null | Yes | Null for `none` and `computed` tiers. Signatory attestation object for `signatory` tier. |
 
-Each time-bounded metric MUST include `observation_window_days`. Agents MUST ignore unknown fields without error.
+Agents MUST ignore unknown fields without error.
 
----
+### Optional Signal Status Metadata
+
+Merchants are not required to list absent Core signals. When a publisher wants to explain absence, it MAY include a `signal_status` array.
+
+Example:
+
+```json
+{
+  "attribute": "disclose:order_accuracy_rate",
+  "status": "not_available",
+  "reason": "source_system_does_not_provide_required_data"
+}
+```
+
+`signal_status` is informational. It does not change conformance, and its absence has no protocol-defined meaning.
 
 ## Standard Attributes
 
-The following attributes are defined in this version of the specification. All are optional unless noted. Time-bounded metrics default to a 90-day observation window unless `observation_window_days` specifies otherwise.
+The following attributes are defined in this version of the specification. All are optional unless included in the Core Commerce Profile and published by the merchant. The attribute library is broader than the Core Commerce Profile.
+
+- **Core Commerce signals** are the first standardized profile for agentic commerce and carry stricter requirements around 90-day trailing windows, daily refresh expectations for automated publishers, and methodology metadata.
+- **Standard attributes** are the broader optional vocabulary from which current and future profiles may be composed.
+- **Future profiles** may define vertical, channel, or platform-specific signal sets.
 
 **Categories:**
 1. [Product Quality](#1-product-quality)
@@ -268,11 +402,78 @@ The following attributes are defined in this version of the specification. All a
 11. [Identity & Legitimacy](#11-identity--legitimacy)
 12. [Review Signals](#12-review-signals)
 
----
+### Core Commerce Methodology Requirements
+
+For each published Core Commerce signal, the methodology MUST define:
+
+- Definition
+- Numerator, where applicable
+- Denominator, where applicable
+- Observation window
+- Exclusions
+- Minimum sample guidance, where applicable
+- Rounding rules
+- Required metadata
+
+The seven Core Commerce signals in v0.1 use `methodology_version: "core-commerce-v0.1"`.
+
+#### `disclose:product_return_rate`
+
+- **Definition:** Rate of units returned during the trailing 90-day observation window.
+- **Numerator:** Returned units, including returnless refunds where no item is physically returned.
+- **Denominator:** Shipped units during the same observation window.
+- **Exclusions:** Test orders, cancelled orders never shipped, duplicate orders, and exchanges where the buyer selected a replacement item without a refund.
+- **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
+
+#### `disclose:on_time_shipment_rate`
+
+- **Definition:** Rate of orders shipped within the merchant's stated fulfillment window during the trailing 90-day observation window.
+- **Numerator:** Orders shipped on or before the promised fulfillment deadline.
+- **Denominator:** Orders requiring shipment during the same observation window.
+- **Exclusions:** Cancelled orders, digital-only orders, test orders, and orders delayed by buyer action.
+- **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
+
+#### `disclose:refund_processing_time_median_days`
+
+- **Definition:** Median business days from receipt of returned item at the merchant's return facility to refund completion during the trailing 90-day observation window.
+- **Numerator/denominator:** Not a ratio. Calculated across qualifying refund events.
+- **Exclusions:** Returnless refunds, refunds initiated before item receipt, test orders, and refunds blocked by buyer payment method or external processor delay where known.
+- **Rounding:** Decimal days rounded to one decimal place unless a publisher declares greater precision.
+
+#### `disclose:chargeback_rate`
+
+- **Definition:** Chargebacks as a proportion of completed transactions during the trailing 90-day observation window.
+- **Numerator:** Chargeback events associated with completed transactions in the observation window.
+- **Denominator:** Completed transactions in the same observation window.
+- **Exclusions:** Test transactions, voided authorizations, and cancelled transactions never captured.
+- **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
+
+#### `disclose:dispute_win_rate`
+
+- **Definition:** Rate of disputed transactions resolved in the merchant's favour during the trailing 90-day observation window.
+- **Numerator:** Disputes resolved in the merchant's favour.
+- **Denominator:** Disputes resolved during the same observation window.
+- **Exclusions:** Open disputes and cancelled dispute records.
+- **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
+
+#### `disclose:platform_seller_tenure_days`
+
+- **Definition:** Number of days the merchant has been an active seller on its primary commerce platform as of `generated_at`.
+- **Numerator/denominator:** Not a ratio.
+- **Observation window:** Not time-bounded. This signal MUST include `generated_at` and SHOULD include `source_of_record` and `platform_seller_tenure_platform`.
+- **Rounding:** Integer days.
+
+#### `disclose:order_accuracy_rate`
+
+- **Definition:** Rate of orders fulfilled without incorrect or damaged items during the trailing 90-day observation window.
+- **Numerator:** Orders with no known incorrect item or damaged item event.
+- **Denominator:** Fulfilled orders during the same observation window.
+- **Exclusions:** Cancelled orders, test orders, digital-only orders, and orders without sufficient fulfillment data.
+- **Rounding:** Decimal ratio rounded to four decimal places unless a publisher declares greater precision.
 
 ### 1. Product Quality
 
-Operational signals about product performance derived from post-purchase behaviour. These reflect what buyers actually did — returned, repurchased, reported defective — rather than what they said.
+Operational signals about product performance derived from post-purchase behaviour. These reflect what buyers actually did - returned, repurchased, reported defective - rather than what they said.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
@@ -281,7 +482,7 @@ Operational signals about product performance derived from post-purchase behavio
 | `disclose:product_defect_rate` | decimal | Rate of units reported defective or dead-on-arrival at delivery (0–1). Distinct from return rate: captures manufacturing and quality control failures before buyer decision. |
 | `disclose:size_accuracy_rate` | decimal | Rate of orders where the delivered item matched the size or fit specified at purchase (0–1). Primarily relevant for apparel, footwear, and sized goods. Derived from return reason codes where available. |
 
-> **Measurement note — return rate:** Measured as returned units divided by total shipped units within the observation window. Exchanges (where the buyer selects a replacement item) are NOT counted as returns. Returnless refunds where no item is physically returned ARE counted. Where a Signatory attests this attribute, the Signatory's methodology governs.
+> **Measurement note - return rate:** Measured as returned units divided by total shipped units within the observation window. Exchanges (where the buyer selects a replacement item) are NOT counted as returns. Returnless refunds where no item is physically returned ARE counted. Where a Signatory attests this attribute, the Signatory's methodology governs.
 
 ---
 
@@ -330,14 +531,14 @@ Operational signals covering the merchant's warehouse-side fulfillment performan
 
 ### 4. Inventory & Availability
 
-Signals about whether products are actually available when an agent attempts to purchase. Inventory failures are a critical agentic commerce failure mode — an agent that recommends an out-of-stock product, or places an order against inaccurate inventory, has failed the buyer regardless of all other merchant quality signals.
+Signals about whether products are actually available when an agent attempts to purchase. Inventory failures are a critical agentic commerce failure mode - an agent that recommends an out-of-stock product, or places an order against inaccurate inventory, has failed the buyer regardless of all other merchant quality signals.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `disclose:in_stock_rate` | decimal | Rate at which listed products are in stock at the time of order placement (0–1), measured across all active SKUs within the observation window. |
 | `disclose:stockout_frequency_rate` | decimal | Rate of active SKUs that experienced at least one stockout during the observation window (0–1). |
 | `disclose:backorder_rate` | decimal | Proportion of orders placed against backordered inventory (0–1). Agents SHOULD surface this to buyers who have expressed time-sensitivity. |
-| `disclose:inventory_accuracy_rate` | decimal | Rate at which displayed inventory levels match actual warehouse counts at the time of order (0–1). Mismatches result in post-order cancellations — a significant buyer trust failure. |
+| `disclose:inventory_accuracy_rate` | decimal | Rate at which displayed inventory levels match actual warehouse counts at the time of order (0–1). Mismatches result in post-order cancellations - a significant buyer trust failure. |
 | `disclose:pre_order_fulfillment_rate` | decimal | For merchants who accept pre-orders: rate of pre-orders fulfilled on or before the stated availability date (0–1). Omit if the merchant does not offer pre-orders. |
 
 ---
@@ -371,7 +572,7 @@ Signals about transaction integrity and payment reliability. Agents handling aut
 
 ### 7. Customer Support
 
-Signals about the quality, speed, and accessibility of the merchant's customer support. For agentic purchases, post-purchase support access is a material risk factor — an agent that cannot escalate a buyer issue has limited recourse.
+Signals about the quality, speed, and accessibility of the merchant's customer support. For agentic purchases, post-purchase support access is a material risk factor - an agent that cannot escalate a buyer issue has limited recourse.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
@@ -385,7 +586,7 @@ Signals about the quality, speed, and accessibility of the merchant's customer s
 
 ### 8. Pricing & Conversion
 
-Signals about pricing integrity and buyer behaviour. These attributes help agents distinguish merchants with stable, honest pricing from those engaged in discount theater — artificial inflation followed by manufactured discounts.
+Signals about pricing integrity and buyer behaviour. These attributes help agents distinguish merchants with stable, honest pricing from those engaged in discount theater - artificial inflation followed by manufactured discounts.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
@@ -430,7 +631,7 @@ Certification-based signals about the merchant's environmental and ethical pract
 
 ### 11. Identity & Legitimacy
 
-Signals that help agents distinguish legitimate merchants from fraudulent storefronts, impersonation attempts, and fly-by-night operators. This is the category most resistant to gaming: the signals are grounded in external registries — business registration databases, domain history, trademark records — rather than behavioral data the merchant controls. As agentic commerce scales, counterfeit merchant risk becomes a material threat vector that no existing trust signal framework addresses.
+Signals that help agents distinguish legitimate merchants from fraudulent storefronts, impersonation attempts, and fly-by-night operators. This is the category most resistant to gaming: the signals are grounded in external registries - business registration databases, domain history, trademark records - rather than behavioral data the merchant controls. As agentic commerce scales, counterfeit merchant risk becomes a material threat vector that no existing trust signal framework addresses.
 
 > **Verification note:** Attributes in this category are particularly well-suited to third-party attestation. Business registry services, WHOIS data providers, and trademark database services are natural Signatory candidates. Self-reported values in this category carry meaningfully less evidential weight than attested values and SHOULD be weighted accordingly by agents.
 
@@ -467,18 +668,27 @@ Signals derived from buyer reviews and ratings. These differ from operational me
 
 ### Purpose
 
-A source declaration identifies the platform or system from which specific self-reported attributes were derived. Sources are distinct from attestations: a source declares data origin, not cryptographic verification. Agents MAY use source declarations to calibrate confidence in self-reported signals — platform-derived data is harder to manipulate than merchant-entered data, but carries no Signatory accountability.
+A source declaration identifies the platform, API, or system from which disclosed attributes were derived. Sources are distinct from attestations: a source declares data origin, not cryptographic verification. Agents MAY use source declarations to calibrate confidence in a signal, but source declarations do not create Signatory accountability.
 
-The sources array creates a legible upgrade path. A platform appearing in `sources` today MAY become a registered Signatory and appear in `attestations` once formal attestation is established. Agents SHOULD treat the same signal attested by a registered Signatory as materially stronger than the same signal declared via a source entry.
+This specification distinguishes three roles:
+
+| Role | Meaning |
+|---|---|
+| `source_of_record` | The platform, API, database, or system from which the underlying data was retrieved. |
+| `computed_by` | The tool, service, or publisher that calculated the signal from the source data. |
+| Signatory | An authorized third party that cryptographically signs specified signals within its approved scope. |
+
+The sources array creates a legible upgrade path. A platform appearing in `sources` today MAY become a registered Signatory and appear in `attestations` once formal attestation is established. Agents SHOULD treat the same signal attested by a registered Signatory as materially stronger than the same signal declared only through source metadata.
 
 ### Source Object
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `source_id` | string | Yes | Identifier for the originating platform (e.g., `"shopify"`, `"lightspeed"`) |
-| `source_name` | string | Yes | Human-readable name of the platform |
-| `retrieved_at` | string | Yes | RFC 3339 timestamp of when the data was retrieved from the platform |
-| `attributed_attributes` | array of strings | Yes | List of `disclose:` attribute keys derived from this source |
+| `source_id` | string | Yes | Identifier for the originating platform, for example `shopify`, `woocommerce`, or a primary domain. |
+| `source_name` | string | Yes | Human-readable name of the platform or system. |
+| `retrieved_at` | string | Yes | RFC 3339 timestamp of when the data was retrieved from the source. |
+| `source_type` | string | No | Recommended values: `commerce_platform`, `returns_platform`, `payments_platform`, `shipping_platform`, `reviews_platform`, `registry`, `other`. |
+| `attributed_attributes` | array of strings | Yes | List of `disclose:` attribute keys derived from this source. |
 
 ### Recommended `source_id` Values
 
@@ -492,13 +702,15 @@ The sources array creates a legible upgrade path. A platform appearing in `sourc
 | `woocommerce` | WooCommerce |
 | `shopline` | Shopline |
 
-Platforms not listed here SHOULD use their primary domain as the `source_id` (e.g., `"acmeplatform.com"`).
+Platforms not listed here SHOULD use their primary domain as the `source_id`, for example `acmeplatform.com`.
 
 Example source entry:
+
 ```json
 {
   "source_id": "shopify",
   "source_name": "Shopify",
+  "source_type": "commerce_platform",
   "retrieved_at": "2026-03-26T00:00:00Z",
   "attributed_attributes": [
     "disclose:product_return_rate",
@@ -510,30 +722,55 @@ Example source entry:
 }
 ```
 
----
-
 ## Attestations
 
 ### Purpose
 
-An attestation is a cryptographically signed statement from an authorized Signatory confirming that one or more disclosed attributes have been independently verified against source data. Attestations distinguish Disclose from self-reported signals that can be easily manipulated.
+An attestation is a cryptographically signed statement from an authorized Signatory confirming that one or more disclosed attributes have been independently verified against source data or an approved verification method. Attestations distinguish Signatory-accountable signals from self-reported or computed signals.
 
-Merchants MAY publish disclosures without attestations. Unattested attributes are self-reported and agents SHOULD treat them accordingly. Attested attributes carry the reputational weight of the signing Signatory.
+Merchants MAY publish disclosures without attestations. Unattested attributes may still be useful to agents, but they carry no Signatory accountability.
+
+A Signatory attests only to the specific signals listed in `attested_attributes` and only within its authorized scope in the Signatory Registry. A Signatory does not certify the merchant, require complete Core Commerce Profile coverage, or determine how agents should interpret the signal.
+
+A Signatory is accountable for:
+
+- the signed attribute name
+- the disclosed value at the time of attestation
+- the source of record or approved verification method
+- the methodology version applied
+- the observation window, where applicable
+- the generated timestamp and attestation timestamp
+- signature validity
+- revocation status
+
+A Signatory is not accountable for:
+
+- signals the merchant does not expose
+- signals outside the Signatory's authorized scope
+- agent interpretation
+- buyer decisions
+- merchant future performance
+- commercial outcomes
+- other Signatories' attestations
 
 ### Attestation Object
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `signatory_id` | string | Yes | Unique identifier for the Signatory (e.g., `"loop-returns.com"`) |
-| `signatory_name` | string | Yes | Human-readable name of the Signatory |
-| `attested_attributes` | array of strings | Yes | List of `disclose:` attribute keys this attestation covers |
-| `attested_at` | string | Yes | RFC 3339 timestamp of when the attestation was issued |
-| `expires_at` | string | No | RFC 3339 timestamp after which the attestation should no longer be trusted |
-| `signature` | string | Yes | Base64url-encoded cryptographic signature over the attestation payload |
-| `signing_key_id` | string | Yes | Key ID (`kid`) corresponding to the Signatory's published signing key |
-| `payment_commitment` | object or null | No | Optional payment routing instruction for outcome-based Signatory compensation. When present, declares the Signatory's fee terms and routing destination. Full mechanism defined in a future extension. MAY be `null` in this version. |
+| `signatory_id` | string | Yes | Unique identifier for the Signatory, for example `loop-returns.com`. |
+| `signatory_name` | string | Yes | Human-readable name of the Signatory. |
+| `attested_attributes` | array of strings | Yes | List of `disclose:` attribute keys this attestation covers. |
+| `methodology_versions` | array of strings | Recommended | Methodology versions applied to the attested attributes. |
+| `attested_at` | string | Yes | RFC 3339 timestamp of when the attestation was issued. |
+| `expires_at` | string | No | RFC 3339 timestamp after which the attestation should no longer be treated as current. |
+| `signature` | string | Yes | Base64url-encoded cryptographic signature over the attestation payload. |
+| `signing_key_id` | string | Yes | Key ID (`kid`) corresponding to the Signatory's published signing key. |
+| `benchmark` | object | No | Optional benchmark context. See [Signatory Benchmarks](#signatory-benchmarks). |
+
+`payment_commitment` is not part of the core attestation object in this version. Signatory compensation mechanisms MAY be defined in a future extension.
 
 Example attestation:
+
 ```json
 {
   "signatory_id": "loop-returns.com",
@@ -546,85 +783,118 @@ Example attestation:
     "disclose:refund_processing_time_p90_days",
     "disclose:exchange_rate"
   ],
+  "methodology_versions": ["core-commerce-v0.1"],
   "attested_at": "2026-02-01T00:00:00Z",
-  "expires_at": "2026-08-01T00:00:00Z",
+  "expires_at": "2026-02-03T00:00:00Z",
   "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-  "signing_key_id": "loop-2026",
-  "payment_commitment": null
+  "signing_key_id": "loop-2026"
 }
 ```
 
 ### Attestation Payload
 
-The payload signed by the Signatory is a canonical JSON object containing the merchant domain, Signatory ID, attested attribute values at time of attestation, and timestamps. The `attested_attributes` object contains actual attribute values — not just keys — preventing merchants from changing values after attestation without invalidating the signature.
+The payload signed by the Signatory is a canonical JSON object containing the merchant domain, Signatory ID, attested attribute values at time of attestation, methodology version, source of record or verification method, observation windows, and timestamps. The `attested_attributes` object contains actual attribute values, not just keys, preventing merchants from changing values after attestation without invalidating the signature.
 
 ### Signature Algorithm
 
 Signatories MUST sign attestation payloads using ES256 (ECDSA with P-256 and SHA-256). Signatories MUST publish their signing keys as JWK (JSON Web Key) objects at:
+
 ```
 /.well-known/disclose-signatory
 ```
 
----
+### Future Extension: Signatory Compensation
+
+The framework anticipates future extensions for Signatory compensation, including success-based or outcome-based commercial models. These mechanisms are intentionally excluded from the core disclosure and attestation specification.
 
 ## Signatory Registry
 
 ### Purpose
 
-The Signatory Registry is the canonical list of authorized Disclose Signatories. Its existence ensures that an attested disclosure carries meaningful weight — any party claiming to be a Signatory must be publicly listed, with their signing keys published and auditable.
+The Signatory Registry is the canonical list of authorized Disclose Signatories. Its existence ensures that an attested disclosure carries meaningful weight. Any party claiming to be a Signatory must be publicly listed, with authorized attributes, methodology versions, signing keys, and status visible to agents.
 
 ### Registry Discovery
 
 The Signatory Registry is published and maintained by the Disclose Framework governing body at:
+
 ```
 https://discloseframework.dev/registry/signatories.json
 ```
 
-Agents SHOULD cache this registry and refresh it periodically. Agents MUST validate that the `signatory_id` in any attestation appears in the current registry before treating the attestation as trusted.
+Agents SHOULD cache this registry and refresh it periodically. Agents MUST validate that the `signatory_id` in any attestation appears in the current registry with `status: active` before treating the attestation as Signatory-attested.
 
 ### Signatory Listing
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `signatory_id` | string | Unique identifier (matches the Signatory's domain) |
-| `signatory_name` | string | Human-readable name |
-| `signable_attributes` | array of strings | The `disclose:` attributes this Signatory is authorized to attest |
-| `keys_url` | string | URL to the Signatory's `/.well-known/disclose-signatory` endpoint |
-| `status` | string | One of: `active`, `suspended`, `revoked` |
-| `listed_at` | string | RFC 3339 timestamp of when the Signatory was added to the registry |
+| `signatory_id` | string | Unique identifier, typically matching the Signatory's domain. |
+| `signatory_name` | string | Human-readable name. |
+| `authorized_attributes` | array of strings | The `disclose:` attributes this Signatory is authorized to attest. |
+| `methodology_versions_supported` | array of strings | Methodology versions this Signatory is authorized to use. |
+| `keys_url` | string | URL to the Signatory's `/.well-known/disclose-signatory` endpoint. |
+| `revocation_url` | string | Optional URL for revocation status or revocation list. |
+| `status` | string | One of: `active`, `suspended`, `revoked`. |
+| `listed_at` | string | RFC 3339 timestamp of when the Signatory was added to the registry. |
+| `suspended_at` | string | Optional RFC 3339 timestamp of suspension. |
+| `revoked_at` | string | Optional RFC 3339 timestamp of revocation. |
+| `contact` | string | Optional contact or support endpoint for registry issues. |
+
+Example listing:
+
+```json
+{
+  "signatory_id": "example-payments.com",
+  "signatory_name": "Example Payments",
+  "authorized_attributes": [
+    "disclose:chargeback_rate",
+    "disclose:dispute_win_rate"
+  ],
+  "methodology_versions_supported": ["core-commerce-v0.1"],
+  "keys_url": "https://example-payments.com/.well-known/disclose-signatory",
+  "revocation_url": "https://example-payments.com/.well-known/disclose-revocations",
+  "status": "active",
+  "listed_at": "2026-02-01T00:00:00Z"
+}
+```
 
 ### Registry Governance
 
-**Application.** Any organization seeking Signatory status MUST submit an application to the governing body via [GitHub Issues](https://github.com/disclose-framework/spec/issues) until the formal application process is established at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
+**Governance status.** Disclose is currently maintained as an open framework. It is intended to graduate into a protocol governed by a working group once there is sufficient participation from merchants, agents, platforms, and Signatories.
 
-**Review.** The governing body will review applications for methodology soundness, data access credibility, and potential conflicts of interest. Review outcomes are published publicly.
+**Application.** Any organization seeking Signatory status MUST submit an application to the governing body via [GitHub Issues](https://github.com/disclose-framework/spec/issues) until the formal application process is established at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, methodology versions supported, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
 
-**Listing.** Approved Signatories are added to the registry with `status: active`. Signatories MAY NOT attest attributes outside their approved scope.
+**Review.** The governing body reviews applications for methodology soundness, data access credibility, conflict of interest, signing infrastructure, and revocation process. Review outcomes are published publicly.
 
-**Suspension and Revocation.** The governing body MAY suspend a Signatory (`status: suspended`) pending investigation, or revoke a Signatory (`status: revoked`) for material misrepresentation or methodology failure. Agents MUST treat attestations from suspended or revoked Signatories as unverified.
+**Listing.** Approved Signatories are added to the registry with `status: active`. Signatories MAY NOT attest attributes outside their approved scope or methodology versions.
+
+**Suspension and revocation.** The governing body MAY suspend a Signatory (`status: suspended`) pending investigation, or revoke a Signatory (`status: revoked`) for material misrepresentation, methodology failure, signing failure, or failure to maintain required revocation mechanisms. Agents MUST treat attestations from suspended or revoked Signatories as unverified.
 
 **Appeals.** Signatories subject to suspension or revocation MAY appeal to the governing body within 30 days. The appeal process and outcomes are published publicly.
 
+The eventual working group is expected to govern Core Profile changes, attribute definitions, methodology versions, Signatory registry rules, key rotation and revocation standards, and extension approval.
+
 ### Signatory Benchmarks
 
-Signatories accumulate aggregate data across their merchant base that gives individual merchant disclosures meaningful context. A return rate of 8% means something different in apparel than in consumer electronics. The `benchmark` object allows Signatories to publish that context alongside an attestation.
+Signatories may accumulate aggregate data across their merchant base that gives individual merchant disclosures useful context. A return rate of 8% may mean something different in apparel than in consumer electronics. The `benchmark` object allows Signatories to publish that context alongside an attestation.
 
-The `benchmark` object is OPTIONAL. Its absence does not affect attestation validity. Signatories who include it are providing interpretive context, not a scoring input.
+The `benchmark` object is OPTIONAL. Its absence does not affect attestation validity. Signatories who include it are providing interpretive context, not a score, badge, ranking, certification, endorsement, or recommendation.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `vertical` | string | Yes | Category label for the merchant's vertical (e.g., `apparel`, `consumer_electronics`, `beverage`) |
-| `source` | string | Yes | Always `signatory_aggregate` in this version |
-| `p50` | decimal | No | Median value for this signal across the Signatory's merchant portfolio for the stated vertical |
-| `p90` | decimal | No | 90th percentile value for the same population |
-| `sample_size_band` | string | No | Population range (e.g., `"1000-5000"`). A band rather than exact count, allowing Signatories to publish context without exposing precise portfolio data. |
+| `vertical` | string | Yes | Category label for the merchant's vertical, for example `apparel`, `consumer_electronics`, or `beverage`. |
+| `source` | string | Yes | Always `signatory_aggregate` in this version. |
+| `p50` | decimal | No | Median value for this signal across the Signatory's merchant portfolio for the stated vertical. |
+| `p90` | decimal | No | 90th percentile value for the same population. |
+| `sample_size_band` | string | No | Population range, for example `1000-5000`. A band rather than exact count allows Signatories to publish context without exposing precise portfolio data. |
 
 Example attestation with benchmark:
+
 ```json
 {
   "signatory_id": "loop-returns.com",
   "signatory_name": "Loop Returns",
   "attested_attributes": ["disclose:product_return_rate"],
+  "methodology_versions": ["core-commerce-v0.1"],
   "attested_at": "2026-02-01T00:00:00Z",
   "signature": "eyJhbGci...",
   "signing_key_id": "loop-2026",
@@ -634,155 +904,161 @@ Example attestation with benchmark:
     "p50": 0.18,
     "p90": 0.32,
     "sample_size_band": "1000-5000"
-  },
-  "payment_commitment": null
+  }
 }
 ```
 
----
-
 ## Complete Disclosure Document Example
+
+The following example represents a computed publisher disclosure generated from Shopify API data. It exposes six of seven Core Commerce signals. The missing Core signal is not a conformance failure. Core coverage is descriptive only and is not a score, badge, ranking, certification, endorsement, or recommendation.
 
 ```json
 {
-  "disclose_version": "0.2",
+  "disclose_version": "0.3",
   "merchant_domain": "merchant.example.com",
+  "publication_mode": "automated",
+  "refresh_frequency": "daily",
   "channel_scope": "dtc",
-  "issued_at": "2026-02-24T00:00:00Z",
-  "expires_at": "2026-05-24T00:00:00Z",
+  "issued_at": "2026-05-14T00:00:00Z",
+  "expires_at": "2026-05-16T00:00:00Z",
+  "core_profile": {
+    "name": "core-commerce",
+    "version": "0.1",
+    "signals_defined": 7,
+    "signals_disclosed": 6,
+    "coverage_note": "Core coverage is descriptive only and is not a score, badge, ranking, certification, endorsement, or recommendation."
+  },
   "attributes": {
-    "disclose:repeat_purchase_rate": {
-      "value": 0.38,
-      "observation_window_days": 90,
-      "reported_by": "merchant",
-      "attestation_level": "none",
-      "attestation": null
-    },
     "disclose:product_return_rate": {
-      "value": 0.06,
+      "value": 0.0006,
+      "unit": "ratio",
       "observation_window_days": 90,
-      "source": "shopify_api",
-      "reported_by": "merchant",
+      "window_start": "2026-02-13T00:00:00Z",
+      "window_end": "2026-05-13T23:59:59Z",
+      "generated_at": "2026-05-14T00:00:00Z",
+      "next_expected_refresh": "2026-05-15T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "sure_signal",
       "computed_by": "sure_signal",
       "attestation_level": "computed",
-      "attestation": null
-    },
-    "disclose:return_policy_type": {
-      "value": "free",
-      "reported_by": "merchant",
-      "attestation_level": "none",
-      "attestation": null
-    },
-    "disclose:return_window_days": {
-      "value": 30,
-      "reported_by": "merchant",
-      "attestation_level": "none",
-      "attestation": null
-    },
-    "disclose:refund_processing_time_median_days": {
-      "value": 3.2,
-      "observation_window_days": 90,
-      "source": "shopify_api",
-      "reported_by": "merchant",
-      "computed_by": "sure_signal",
-      "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
       "attestation": null
     },
     "disclose:on_time_shipment_rate": {
-      "value": 0.97,
+      "value": 0.95,
+      "unit": "ratio",
       "observation_window_days": 90,
-      "source": "loop_returns",
-      "reported_by": "loop_returns",
-      "computed_by": "loop_returns",
-      "attestation_level": "signatory",
-      "attestation": {
-        "signatory_id": "loop-returns.com",
-        "signatory_name": "Loop Returns",
-        "attested_at": "2026-02-01T00:00:00Z",
-        "expires_at": "2026-08-01T00:00:00Z",
-        "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-        "signing_key_id": "loop-2026"
-      }
-    },
-    "disclose:chargeback_rate": {
-      "value": 0.003,
-      "observation_window_days": 90,
-      "source": "shopify_api",
-      "reported_by": "merchant",
+      "window_start": "2026-02-13T00:00:00Z",
+      "window_end": "2026-05-13T23:59:59Z",
+      "generated_at": "2026-05-14T00:00:00Z",
+      "next_expected_refresh": "2026-05-15T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "sure_signal",
       "computed_by": "sure_signal",
       "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
       "attestation": null
     },
-    "disclose:review_rating": {
-      "value": 4.7,
-      "reported_by": "merchant",
-      "attestation_level": "none",
+    "disclose:refund_processing_time_median_days": {
+      "value": 2.2,
+      "unit": "days",
+      "observation_window_days": 90,
+      "window_start": "2026-02-13T00:00:00Z",
+      "window_end": "2026-05-13T23:59:59Z",
+      "generated_at": "2026-05-14T00:00:00Z",
+      "next_expected_refresh": "2026-05-15T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "sure_signal",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
       "attestation": null
     },
-    "disclose:sustainability_certified": {
-      "value": true,
-      "reported_by": "merchant",
-      "attestation_level": "none",
+    "disclose:chargeback_rate": {
+      "value": 0.0002,
+      "unit": "ratio",
+      "observation_window_days": 90,
+      "window_start": "2026-02-13T00:00:00Z",
+      "window_end": "2026-05-13T23:59:59Z",
+      "generated_at": "2026-05-14T00:00:00Z",
+      "next_expected_refresh": "2026-05-15T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "sure_signal",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
       "attestation": null
     },
-    "disclose:business_registration_verified": {
-      "value": true,
-      "reported_by": "merchant",
-      "attestation_level": "none",
+    "disclose:dispute_win_rate": {
+      "value": 0.98,
+      "unit": "ratio",
+      "observation_window_days": 90,
+      "window_start": "2026-02-13T00:00:00Z",
+      "window_end": "2026-05-13T23:59:59Z",
+      "generated_at": "2026-05-14T00:00:00Z",
+      "next_expected_refresh": "2026-05-15T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "sure_signal",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
+      "attestation": null
+    },
+    "disclose:platform_seller_tenure_days": {
+      "value": 3862,
+      "unit": "days",
+      "generated_at": "2026-05-14T00:00:00Z",
+      "source_of_record": "shopify_api",
+      "reported_by": "sure_signal",
+      "computed_by": "sure_signal",
+      "attestation_level": "computed",
+      "methodology_version": "core-commerce-v0.1",
+      "disclose:platform_seller_tenure_platform": "shopify",
       "attestation": null
     }
   },
+  "signal_status": [
+    {
+      "attribute": "disclose:order_accuracy_rate",
+      "status": "not_available",
+      "reason": "source_system_does_not_provide_required_data"
+    }
+  ],
   "sources": [
     {
       "source_id": "shopify",
       "source_name": "Shopify",
-      "retrieved_at": "2026-02-24T00:00:00Z",
+      "source_type": "commerce_platform",
+      "retrieved_at": "2026-05-14T00:00:00Z",
       "attributed_attributes": [
         "disclose:product_return_rate",
         "disclose:on_time_shipment_rate",
+        "disclose:refund_processing_time_median_days",
         "disclose:chargeback_rate",
-        "disclose:order_accuracy_rate",
-        "disclose:refund_processing_time_median_days"
+        "disclose:dispute_win_rate",
+        "disclose:platform_seller_tenure_days"
       ]
     }
   ],
-  "attestations": [
-    {
-      "signatory_id": "loop-returns.com",
-      "signatory_name": "Loop Returns",
-      "attested_attributes": [
-        "disclose:product_return_rate",
-        "disclose:return_policy_type",
-        "disclose:return_window_days",
-        "disclose:refund_processing_time_median_days",
-        "disclose:refund_processing_time_p90_days",
-        "disclose:exchange_rate"
-      ],
-      "attested_at": "2026-02-01T00:00:00Z",
-      "expires_at": "2026-08-01T00:00:00Z",
-      "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Imxvb3AtMjAyNiJ9...",
-      "signing_key_id": "loop-2026",
-      "payment_commitment": null
-    },
-    {
-      "signatory_id": "narvar.com",
-      "signatory_name": "Narvar",
-      "attested_attributes": [
-        "disclose:on_time_shipment_rate",
-        "disclose:delivered_on_time_rate",
-        "disclose:order_accuracy_rate"
-      ],
-      "attested_at": "2026-02-10T00:00:00Z",
-      "expires_at": "2026-08-10T00:00:00Z",
-      "signature": "eyJhbGciOiJFUzI1NiIsImtpZCI6Im5hcnZhci0yMDI2In0...",
-      "signing_key_id": "narvar-2026",
-      "payment_commitment": null
-    }
-  ]
+  "attestations": []
 }
 ```
 
----
+### Manual Snapshot Example
+
+Manual snapshots MAY be used to validate that signals can be read by agents. A manual snapshot MUST declare that it is not automatically refreshed.
+
+```json
+{
+  "disclose_version": "0.3",
+  "merchant_domain": "merchant.example.com",
+  "publication_mode": "manual_snapshot",
+  "refresh_frequency": "none",
+  "issued_at": "2026-05-14T00:00:00Z",
+  "expires_at": "2026-05-21T00:00:00Z",
+  "note": "Manual pull used for validation. This document does not imply daily refresh."
+}
+```
 
 ## Security
 
@@ -790,16 +1066,27 @@ Example attestation with benchmark:
 
 All Disclose endpoints MUST be served over HTTPS. HTTP requests MUST be rejected or redirected.
 
+### Freshness Verification
+
+Agents SHOULD evaluate `issued_at`, `expires_at`, `generated_at`, `window_start`, `window_end`, and `refresh_frequency` before relying on a signal.
+
+For automated Core Commerce disclosures, agents SHOULD treat a signal as stale when `generated_at` exceeds the expected refresh interval by more than 24 hours, unless the document explicitly declares a longer permitted interval.
+
+Manual snapshots MUST declare `publication_mode: "manual_snapshot"` and MUST NOT imply daily refresh. Agents SHOULD treat manual snapshots as validation or demonstration artifacts unless their own policies allow manual snapshots in production decisioning.
+
 ### Signature Verification
 
-Agents MUST verify attestation signatures before treating any attested attribute as verified. The verification flow is:
+Agents MUST verify attestation signatures before treating any attested attribute as Signatory-attested. The verification flow is:
 
 1. Fetch the Signatory Registry and confirm the `signatory_id` is listed with `status: active`.
-2. Fetch the Signatory's signing keys from their `keys_url`.
-3. Locate the key matching `signing_key_id`.
-4. Reconstruct the canonical attestation payload.
-5. Verify the ES256 signature against the payload using the public key.
-6. Confirm `attested_at` is in the past and `expires_at` (if present) is in the future.
+2. Confirm the attested attributes are within the Signatory's `authorized_attributes`.
+3. Confirm the methodology version is within the Signatory's `methodology_versions_supported`.
+4. Fetch the Signatory's signing keys from their `keys_url`.
+5. Locate the key matching `signing_key_id`.
+6. Reconstruct the canonical attestation payload.
+7. Verify the ES256 signature against the payload using the public key.
+8. Confirm `attested_at` is in the past and `expires_at` (if present) is in the future.
+9. Check revocation status where the Signatory publishes a revocation endpoint.
 
 Agents MUST reject attestations that fail any step of this verification flow.
 
@@ -809,25 +1096,25 @@ The `merchant_domain` field in the disclosure document MUST match the domain fro
 
 ### Replay Prevention
 
-Attestations include `attested_at` and `expires_at` timestamps. Agents SHOULD treat expired attestations as unverified, equivalent to self-reported attributes.
+Attestations include `attested_at` and `expires_at` timestamps. Agents SHOULD treat expired attestations as unverified.
 
 ### Merchant Impersonation and Attestation Replay
 
-A fraudster operating an impersonation domain MAY copy a legitimate merchant's disclosure document verbatim, including any attested signals. The `merchant_domain` field requirement (see Domain Binding) invalidates copied documents where the field is present and correctly set. However, agents MUST NOT rely solely on the `merchant_domain` field as fraud protection — DNS-level verification that the serving domain is the legitimate merchant domain is a TLS and network concern outside the scope of this framework.
+A fraudster operating an impersonation domain MAY copy a legitimate merchant's disclosure document verbatim, including any attested signals. The `merchant_domain` field requirement invalidates copied documents where the field is present and correctly set. However, agents MUST NOT rely solely on the `merchant_domain` field as fraud protection. DNS-level verification that the serving domain is the legitimate merchant domain is a TLS and network concern outside the scope of this framework.
 
-The primary defense against attestation replay is the domain-binding requirement in the Signatory signature payload. Signatories MUST include the merchant's canonical domain in the signed attestation payload. Copying an attestation to a different domain produces a signature that fails verification at step 5 of the Signature Verification flow above.
+The primary defense against attestation replay is the domain-binding requirement in the Signatory signature payload. Signatories MUST include the merchant's canonical domain in the signed attestation payload. Copying an attestation to a different domain produces a signature that fails verification.
 
 Agents MUST perform full signature verification as specified. Agents MUST NOT shortcut verification by trusting the `merchant_domain` field without also verifying the Signatory signature covers that domain.
 
 ### Multi-Domain Merchants
 
-A merchant operating across multiple regional storefronts (e.g., `brandname.com`, `brandname.ca`, `brandname.com.au`) MAY hold attestations covering more than one domain. In this case, the Signatory signature MUST cover an explicit `verified_domains` array rather than a single domain field. The serving domain MUST appear in the `verified_domains` array for the attestation to be considered valid.
+A merchant operating across multiple regional storefronts, for example `brandname.com`, `brandname.ca`, and `brandname.com.au`, MAY hold attestations covering more than one domain. In this case, the Signatory signature MUST cover an explicit `verified_domains` array rather than a single domain field. The serving domain MUST appear in the `verified_domains` array for the attestation to be considered valid.
 
-Each domain's inclusion in `verified_domains` reflects explicit Signatory confirmation of data coverage for that storefront. It is not merchant self-declaration. Signatories MUST NOT include a domain in `verified_domains` unless they hold independent performance data for that storefront. Signatories SHOULD NOT treat regional storefronts and operationally distinct brand domains (e.g., a mainline store and an outlet store) as equivalent for attestation purposes.
+Each domain's inclusion in `verified_domains` reflects explicit Signatory confirmation of data coverage for that storefront. It is not merchant self-declaration. Signatories MUST NOT include a domain in `verified_domains` unless they hold independent performance data for that storefront. Signatories SHOULD NOT treat regional storefronts and operationally distinct brand domains, such as a mainline store and an outlet store, as equivalent for attestation purposes.
 
 ### Attestation Revocation
 
-Signatories MUST maintain a mechanism to revoke attestations before their `expires_at` date where a merchant's underlying data has changed materially. Signatories SHOULD publish a revocation endpoint or revocation list at a stable URL declared in the Signatory Registry entry.
+Signatories MUST maintain a mechanism to revoke attestations before their `expires_at` date where a merchant's underlying data has changed materially, where the attestation was issued in error, or where the Signatory's authorization scope has changed. Signatories SHOULD publish a revocation endpoint or revocation list at a stable URL declared in the Signatory Registry entry.
 
 Agents SHOULD check revocation status where a Signatory publishes a revocation endpoint. Agents MAY treat an unexpired attestation as valid where no revocation endpoint is available, but SHOULD note this limitation when surfacing attested signals.
 
@@ -835,65 +1122,89 @@ Agents SHOULD check revocation status where a Signatory publishes a revocation e
 
 Cryptographic signature verification is local computation performed against data already retrieved in the disclosure document fetch. It does not require an additional network request in the common case where the Signatory's public key is cached. Added latency is negligible and does not materially affect agent transaction timing. Agents SHOULD cache Signatory public keys with a refresh interval consistent with the Signatory's published key rotation policy.
 
----
-
 ## Agent Consumption Guidelines
 
-Agents consuming Disclose data operate with significant discretion. The framework does not mandate how agents weight or surface disclosure signals — this is intentionally left to the platform and agent developer. The following are non-normative recommendations:
+Agents consuming Disclose data operate with significant discretion. The framework does not mandate how agents weight or surface disclosure signals. This is intentionally left to the platform and agent developer. The following requirements and recommendations preserve the framework's neutrality:
 
+- Agents MUST NOT represent Core coverage as a score, badge, ranking, certification, endorsement, or recommendation.
+- Agents MUST NOT assume an absent Core signal indicates poor merchant performance, merchant concealment, or non-compliance.
+- Agents MUST verify Signatory status, authorization scope, methodology version, and signature before treating a signal as Signatory-attested.
+- Agents SHOULD distinguish disclosed signals from absent signals.
+- Agents SHOULD distinguish `none`, `computed`, and `signatory` attestation levels when surfacing or weighting signals.
+- Agents SHOULD evaluate `generated_at`, `window_start`, `window_end`, `expires_at`, and `refresh_frequency` before relying on a signal.
 - Signals with `attestation_level: none` should be surfaced as merchant-reported and weighted accordingly.
-- Signals with `attestation_level: computed` should be surfaced as platform-derived, with higher confidence than self-reported but below independently attested.
-- Signals with `attestation_level: signatory` should be surfaced as independently verified, with the Signatory named when relevant to the buyer.
+- Signals with `attestation_level: computed` should be surfaced as platform-derived or computed, with higher confidence than merchant-entered data but below independently attested signals.
+- Signals with `attestation_level: signatory` should be surfaced as independently attested, with the Signatory named when relevant to the buyer.
 - Review signals should be distinguished from operational metrics when surfaced to buyers. Agents SHOULD treat `disclose:review_rating` as contextual rather than authoritative, and SHOULD surface `disclose:review_verified_purchase_rate` and recency signals alongside it wherever possible.
-- Missing disclosures may be surfaced as "disclosure unavailable" rather than assumed positive or negative.
-- Agents SHOULD NOT produce composite scores or trust tiers derived from Disclose attributes. Such aggregations undermine the principle that trust is emergent from raw, verifiable signals.
+- Missing disclosures may be surfaced as `disclosure unavailable` or similar neutral language rather than assumed positive or negative.
+- Agents SHOULD NOT represent Disclose-derived aggregations as Disclose scores, Disclose badges, Disclose certifications, or Disclose rankings.
 - Agents SHOULD NOT penalize merchants for not disclosing specific attributes unless disclosure of that attribute is required by applicable law or platform policy.
 
----
+Agents MAY use Disclose signals as inputs into their own recommendation logic, provided they do not imply that Disclose itself produced the recommendation or verdict.
 
 ## Reference Implementation
 
 To support adoption and validate the specification, the Disclose Framework provides the following reference resources at `https://github.com/disclose-framework/spec`:
 
 - **JSON Schema:** A machine-readable schema for validating disclosure documents against the specification.
-- **Validator:** A reference validator that checks a disclosure document for schema compliance, domain binding, and `observation_window_days` completeness.
+- **Validator:** A reference validator that checks a disclosure document for schema compliance, domain binding, Core signal metadata completeness, 90-day trailing windows for Core signals, daily refresh declaration for automated publishers, manual snapshot declaration where applicable, methodology version presence, source-of-record structure, and attestation scope consistency.
 - **Sample document:** A complete, valid example disclosure document suitable for testing agent consumption logic.
 - **Signatory mock:** A lightweight mock Signatory endpoint for testing signature verification flows without a live Signatory integration.
 
-Implementations that conform to the specification and pass the reference validator MAY self-identify as Disclose-compatible.
-
----
+Implementations that conform to the specification and pass the reference validator MAY self-identify as Disclose-compatible. They MUST NOT self-identify as Disclose-certified unless a future certification programme is formally defined.
 
 ## Versioning
 
-Disclose uses semantic versioning in the format `MAJOR.MINOR` (e.g., `0.2`, `1.0`). The version is declared in the disclosure document via the `disclose_version` field.
+Disclose uses semantic versioning in the format `MAJOR.MINOR`, for example `0.3` or `1.0`. The framework version is declared in the disclosure document via the `disclose_version` field.
 
-The following changes MAY be introduced without a version increment: adding new optional attributes, adding new optional attestation fields, adding new Signatory entries to the registry.
+Profiles and methodologies are versioned separately from the framework specification. For example:
 
-The following changes MUST result in a new MAJOR version: removing or renaming existing attributes, changing the attestation payload structure or signature algorithm, modifying the discovery endpoint path.
+```json
+{
+  "disclose_version": "0.3",
+  "core_profile": {
+    "name": "core-commerce",
+    "version": "0.1"
+  },
+  "methodology_version": "core-commerce-v0.1"
+}
+```
 
----
+The following changes MAY be introduced without a framework version increment: adding new optional attributes, adding new optional attestation fields, adding new Signatory entries to the registry, or adding a new optional profile.
+
+The following changes SHOULD result in a new MINOR version: adding a new Core Commerce Profile version, adding new required metadata for newly defined profiles, or materially clarifying methodology requirements without breaking existing documents.
+
+The following changes MUST result in a new MAJOR version: removing or renaming existing attributes, changing the attestation payload structure or signature algorithm, modifying the discovery endpoint path, or changing required fields in a way that breaks existing conformant documents.
 
 ## Glossary
 
 | Term | Definition |
 |------|------------|
-| Agent | A platform, AI assistant, or automated system that queries Disclose data on behalf of a buyer |
-| Attestation | A cryptographically signed statement from a Signatory confirming that specific disclosed attributes have been independently verified against source data |
-| Attestation Level | A field on every signal object declaring how the value was produced. One of: `none` (merchant self-reported), `computed` (derived from a platform API by a third-party tool), or `signatory` (cryptographically signed by an authorized Signatory). Agents SHOULD use this as the primary signal weighting input. |
-| Benchmark Reference | An optional object within a Signatory attestation providing vertical or category-level signal distributions (p50, p90) derived from the Signatory's merchant portfolio. Intended to give agents interpretive context for attested values. Supported verticals are not enumerated in this version of the specification — Signatories use free-form category labels. See [Signatory Benchmarks](#signatory-benchmarks). |
-| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose` |
-| Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour rather than from framework-assigned scores or badges |
-| Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate |
-| Item | The product or service being transacted. Maps to `schema:ItemOffered`, the schema.org parent type that encompasses both physical goods (`schema:Product`) and services (`schema:Service`). Signals published at Item scope reflect attributes intrinsic to the item itself — such as manufacturer warranty terms, safety recall status, or authorized reseller eligibility — independent of any specific Merchant or Offer. Using `schema:ItemOffered` as the base type ensures the framework applies equally to physical goods, home services, B2B, and digital products. |
-| Merchant | The seller or service provider publishing disclosure signals. Maps to `schema:Organization`. Signals published at Merchant scope reflect aggregate operational performance across all of the merchant's transactions — for example, overall return rate or average fulfillment time. Merchant-scope signals establish baseline seller confidence independent of any specific Item or Offer. The term "Merchant" is used throughout this specification in preference to "Organization" to signal commerce intent and to remain consistent with the concept of Merchant of Record. One of three disclosure scopes; see [Disclosure Scopes](#disclosure-scopes). |
-| Merchant Sovereignty | The principle that merchants retain full control over what they disclose, to whom, and when |
-| Observation Window | The time period over which a metric is computed, declared via the `observation_window_days` field on each signal object |
-| Offer | The intersection of a specific Merchant and a specific Item — this seller, selling this item, under these conditions. Maps to `schema:Offer`. Signals published at Offer scope reflect how a particular Merchant performs on a particular Item: for example, the return rate for this SKU at this seller, or the inventory accuracy rate for this item. Offer-scope signals are the most precise unit of disclosure in the framework, and are the primary data layer an agent uses when comparing the same Item across multiple Merchants. Because Offers are inherently transient — prices and availability change — agents should treat Offer-scope signals as time-sensitive and respect the `attested_at` timestamp in any covering attestation. One of three disclosure scopes; see [Disclosure Scopes](#disclosure-scopes). |
-| Payment Commitment | An optional field in an attestation object declaring a Signatory's fee terms and payment routing instruction for outcome-based compensation. Supports success-based fee models where Signatory compensation is tied to a completed transaction rather than a query. `null` in v0.2. Full mechanism defined in a future extension. |
-| Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time |
-| Review Recency | The proportion of a merchant's total reviews submitted within a recent time window (90 or 365 days), used to assess the freshness of aggregate review ratings |
-| Selective Disclosure | The ability to disclose specific attributes without an all-or-nothing requirement |
-| Signatory | An authorized third party with direct access to source data that cryptographically signs attestations confirming the accuracy of specific merchant signals. Signatories stake their own reputation on the values they attest. Listed in the public Signatory Registry. |
-| Signatory Registry | The canonical, publicly accessible list of authorized Disclose Signatories maintained by the framework governing body at `https://discloseframework.dev/registry/signatories.json` |
-| Source | A platform or system from which self-reported attributes were derived. Declared in the `sources` array. Distinct from a Signatory: a source carries no cryptographic accountability. Agents MAY treat platform-sourced attributes with higher confidence than merchant-entered attributes. A platform appearing in `sources` today MAY become a registered Signatory once formal attestation is established. Recommended `source_id` values: `shopify`, `lightspeed`, `woocommerce`, `bigcommerce`, `magento`, `squarespace`, `wix`, `salesforce_commerce`, `netsuite`. Additional values are permitted; platforms not on this list SHOULD use their primary domain as the `source_id`. |
+| Agent | A platform, AI assistant, or automated system that queries Disclose data on behalf of a buyer. |
+| Attestation | A cryptographically signed statement from a Signatory confirming that specific disclosed attributes have been independently verified against source data or an approved verification method. |
+| Attestation Level | A field on every signal object declaring how the value was produced. One of: `none` (merchant self-reported), `computed` (derived from source data by a computed publisher), or `signatory` (cryptographically signed by an authorized Signatory). |
+| Automated Publisher | A publisher that generates and refreshes disclosures through an automated process. Automated Core Commerce disclosures SHOULD refresh daily. |
+| Benchmark Reference | An optional object within a Signatory attestation providing vertical or category-level signal distributions derived from the Signatory's merchant portfolio. Intended to give agents interpretive context, not a score. |
+| Computed Publisher | A tool or service that calculates disclosed signals from a source of record without cryptographic Signatory accountability, for example Sure Signal computing Shopify API-derived signals. |
+| Core Commerce Profile | The first standard Disclose profile for agentic commerce. Version 0.1 defines seven optional merchant operating signals. Merchants may disclose any subset. |
+| Core Coverage | A descriptive count of how many Core Commerce signals are present in a disclosure document. Core coverage is not a score, badge, ranking, certification, endorsement, or recommendation. |
+| Disclosure Document | The JSON document published by a merchant at `/.well-known/disclose`. |
+| Emergent Trust | The principle that trustworthiness arises from visible, verifiable behaviour and agent interpretation rather than from framework-assigned scores or badges. |
+| Exchange Rate | The proportion of return transactions where the buyer selected a replacement item rather than a refund; a signal of product confidence distinct from the return rate. |
+| Item | The product or service being transacted. Maps to `schema:ItemOffered`, the schema.org parent type that encompasses both physical goods (`schema:Product`) and services (`schema:Service`). |
+| Manual Snapshot | A disclosure document generated manually for testing, validation, onboarding, or demonstration. Manual snapshots MUST declare `publication_mode: "manual_snapshot"` and MUST NOT imply daily refresh. |
+| Merchant | The seller or service provider publishing disclosure signals. Maps to `schema:Organization`. Signals published at Merchant scope reflect aggregate operational performance across the merchant's transactions. |
+| Merchant Sovereignty | The principle that merchants retain full control over what they disclose, to whom, and when. |
+| Methodology Version | A version identifier declaring the calculation method applied to a signal, for example `core-commerce-v0.1`. |
+| Observation Window | The time period over which a metric is computed. Core Commerce signals MUST use a trailing 90-day observation window unless a future profile version explicitly defines otherwise. |
+| Offer | The intersection of a specific Merchant and a specific Item. Maps to `schema:Offer`. Signals published at Offer scope reflect how a particular Merchant performs on a particular Item. |
+| Payment Commitment | A future extension concept for Signatory compensation. It is not part of the core attestation object in this version. |
+| Progressive Enhancement | The ability to begin participation with a single attribute and expand disclosures over time. |
+| Review Recency | The proportion of a merchant's total reviews submitted within a recent time window, used to assess the freshness of aggregate review ratings. |
+| Selective Disclosure | The ability to disclose specific attributes without an all-or-nothing requirement. A merchant may publish any subset of Core Commerce signals. |
+| Signal Absence | The absence of a signal from a disclosure document. Absence has no protocol-defined meaning and MUST NOT be assumed to indicate poor performance, concealment, or non-compliance. |
+| Signal Status | Optional metadata that explains why a Core signal is not disclosed, such as `not_available`, `insufficient_volume`, or `not_applicable`. |
+| Signatory | An authorized third party that cryptographically signs attestations for specific merchant signals within an approved registry scope. A Signatory is accountable for signed signals, not for agent interpretation or merchant certification. |
+| Signatory Registry | The canonical, publicly accessible list of authorized Disclose Signatories maintained by the framework governing body. |
+| Source of Record | The platform, API, database, or system from which the underlying data for a signal was retrieved, for example Shopify API, a payment processor, or a returns platform. |
+
