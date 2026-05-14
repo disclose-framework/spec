@@ -22,7 +22,7 @@ Schema notes:
 - **Date format:** All timestamps MUST be expressed as RFC 3339 unless otherwise specified.
 - **Numeric values:** Numeric values are expressed as decimals unless otherwise noted, for example `0.92` for 92%.
 - **Rates and ratios:** Rates and ratios MUST be expressed as decimals between 0 and 1, for example `0.06` for 6%.
-- **Observation windows:** Core Commerce signals MUST use a trailing 90-day observation window. Each Core Commerce signal MUST include `observation_window_days`, `window_start`, and `window_end`.
+- **Observation windows:** Time-bounded Core Commerce signals MUST use a trailing 90-day observation window unless a future Core Commerce Profile version explicitly defines a different window. Each published time-bounded Core Commerce signal MUST include `observation_window_days`, `window_start`, and `window_end`. Non-time-bounded Core Commerce signals MUST include `generated_at`.
 - **Daily refresh:** Automated Core Commerce disclosures SHOULD refresh daily. Each automated Core Commerce signal MUST include `generated_at` and SHOULD include `next_expected_refresh`.
 - **Manual snapshots:** Manual snapshots MAY be used for testing, validation, onboarding, or demonstration. Manual snapshots MUST declare `publication_mode: "manual_snapshot"` and MUST NOT imply daily refresh.
 - **Measurement methodology:** Each Core Commerce signal MUST include `methodology_version`. Agents SHOULD consider the methodology version, source of record, computation method, and attestation level when interpreting a signal.
@@ -889,7 +889,7 @@ Example listing:
 
 **Governance status.** Disclose is currently maintained as an open framework. It is intended to graduate into a protocol governed by a working group once there is sufficient participation from merchants, agents, platforms, and Signatories.
 
-**Application.** Any organization seeking Signatory status MUST submit an application to the governing body via [GitHub Issues](https://github.com/disclose-framework/spec/issues) until the formal application process is established at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, methodology versions supported, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
+**Application.** Any organization seeking Signatory status MUST submit an application through the public Disclose Framework repository via [GitHub Issues](https://github.com/disclose-framework/spec/issues) until a formal working group or application process is established at `https://discloseframework.dev/registry/apply`. Applications must include: the applicant's domain, the `disclose:` attributes they seek authorization to attest, methodology versions supported, a description of their data access and verification methodology for each attribute, and their proposed signing key endpoint.
 
 **Review.** The governing body reviews applications for methodology soundness, data access credibility, conflict of interest, signing infrastructure, and revocation process. Review outcomes are published publicly.
 
@@ -1376,4 +1376,3 @@ The following changes MUST result in a new MAJOR version: removing or renaming e
 | Signatory | An authorized third party that cryptographically signs attestations for specific merchant signals within an approved registry scope. A Signatory is accountable for signed signals, not for agent interpretation or merchant certification. |
 | Signatory Registry | The canonical, publicly accessible list of authorized Disclose Signatories. During the maintainer-led phase it is maintained through the Disclose Framework repository and is expected to transition to working group, foundation, or standards-body governance. |
 | Source of Record | The platform, API, database, or system from which the underlying data for a signal was retrieved, for example Shopify API, a payment processor, or a returns platform. |
-
