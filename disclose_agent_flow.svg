@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 360" width="680" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .box-gray { fill: #f1efe8; stroke: #b4b2a9; stroke-width: 0.5; }
+      .box-teal { fill: #e1f5ee; stroke: #1d9e75; stroke-width: 0.5; }
+      .label { font-size: 14px; font-weight: 500; fill: #2c2c2a; text-anchor: middle; dominant-baseline: central; }
+      .label-teal { font-size: 14px; font-weight: 500; fill: #085041; text-anchor: middle; dominant-baseline: central; }
+      .sub { font-size: 11px; font-weight: 400; fill: #5f5e5a; text-anchor: middle; dominant-baseline: central; }
+      .sub-teal { font-size: 11px; font-weight: 400; fill: #0f6e56; text-anchor: middle; dominant-baseline: central; }
+      .caption { font-size: 11px; fill: #888780; text-anchor: middle; dominant-baseline: central; }
+      .arr { stroke: #888780; stroke-width: 1.5; fill: none; }
+      .connector { stroke: #b4b2a9; stroke-width: 0.5; }
+    </style>
+  </defs>
+
+  <!-- Step 1: Discover -->
+  <rect x="20" y="52" width="112" height="130" rx="16" class="box-gray"/>
+  <text x="76" y="108" text-anchor="middle" dominant-baseline="central" font-size="52" font-family="system-ui">🛍️</text>
+  <text class="label" x="76" y="158">discover</text>
+
+  <line x1="134" y1="117" x2="150" y2="117" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: Evaluate (Disclose) -->
+  <rect x="152" y="52" width="112" height="130" rx="16" class="box-teal"/>
+  <text x="208" y="108" text-anchor="middle" dominant-baseline="central" font-size="52" font-family="system-ui">🔍</text>
+  <text class="label-teal" x="208" y="158">evaluate</text>
+
+  <line x1="266" y1="117" x2="282" y2="117" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- Step 3: Cart -->
+  <rect x="284" y="52" width="112" height="130" rx="16" class="box-gray"/>
+  <text x="340" y="108" text-anchor="middle" dominant-baseline="central" font-size="52" font-family="system-ui">🛒</text>
+  <text class="label" x="340" y="158">cart</text>
+
+  <line x1="398" y1="117" x2="414" y2="117" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- Step 4: Checkout -->
+  <rect x="416" y="52" width="112" height="130" rx="16" class="box-gray"/>
+  <text x="472" y="108" text-anchor="middle" dominant-baseline="central" font-size="52" font-family="system-ui">💳</text>
+  <text class="label" x="472" y="158">checkout</text>
+
+  <line x1="530" y1="117" x2="546" y2="117" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- Step 5: Orders -->
+  <rect x="548" y="52" width="112" height="130" rx="16" class="box-gray"/>
+  <text x="604" y="108" text-anchor="middle" dominant-baseline="central" font-size="52" font-family="system-ui">📦</text>
+  <text class="label" x="604" y="158">orders</text>
+
+  <!-- UCP pill: discover -->
+  <rect x="20" y="206" width="112" height="52" rx="8" class="box-gray"/>
+  <text class="label" x="76" y="224">UCP</text>
+  <text class="sub" x="76" y="242">/.well-known/ucp</text>
+
+  <!-- DISCLOSE pill -->
+  <rect x="142" y="206" width="136" height="52" rx="8" class="box-teal"/>
+  <text class="label-teal" x="210" y="224">DISCLOSE</text>
+  <text class="sub-teal" x="210" y="242">/.well-known/disclose</text>
+
+  <!-- UCP pill: cart + checkout + orders -->
+  <rect x="284" y="206" width="376" height="52" rx="8" class="box-gray"/>
+  <text class="label" x="472" y="224">UCP</text>
+  <text class="sub" x="472" y="242">/.well-known/ucp</text>
+
+  <!-- Connector lines -->
+  <line x1="76" y1="182" x2="76" y2="206" class="connector"/>
+  <line x1="210" y1="182" x2="210" y2="206" class="connector"/>
+  <line x1="472" y1="182" x2="472" y2="206" class="connector"/>
+
+  <!-- Page label -->
+  <text class="caption" x="340" y="30">Agent purchase flow</text>
+
+  <!-- Bottom caption -->
+  <text class="caption" x="340" y="290">UCP answers how to find and buy. Disclose answers whether to buy.</text>
+</svg>
