@@ -36,6 +36,8 @@ Merchant publishes → Signatory attests → Agent consumes → Agent decides
 
 No centralized merchant score. No platform lock-in. No real-time negotiation required.
 
+![Agent purchase flow](disclose_agent_flow.svg)
+
 ![Discovery path](discovery-path.svg)
 
 ---
